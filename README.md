@@ -1,5 +1,13 @@
 # Chess Game
 
+### Team Members
+
+- Mohammad Anas: A59020296
+- Nimit Vasavat: A59017505
+- Yatharth Vyas: A59018062
+
+### Description
+
 Our CSE 230 project centers around developing a command-line terminal user interface (TUI) for an interactive two-player chess game. The key elements of this game encompass:
 
 Chess board
