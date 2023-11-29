@@ -38,7 +38,12 @@ executable chess
                     brick ,
                     vty ,
                     containers ,
-                    text
+                    text ,
+                    microlens >= 0.3.0.0,
+                    microlens-th,
+                    microlens-mtl,
+                    mtl,
+                    template-haskell
 
     hs-source-dirs:   app
     default-language: Haskell2010
