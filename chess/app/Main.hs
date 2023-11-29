@@ -1,65 +1,54 @@
 {-# LANGUAGE TemplateHaskell #-}
 
 module Main where
-
--- import Brick
-
--- ui :: Widget ()
--- ui = str "Hello, world!"
-
--- main :: IO ()
--- main = simpleMain ui
-
--- draw a chess board
-
-import Brick
-import Brick.Main
-import Brick.Types
-import Brick.Widgets.Border
-import Brick.Widgets.Center
-import Brick.Widgets.Core
-import Brick.Widgets.Border.Style
-import Graphics.Vty.Attributes
-import Graphics.Vty.Input.Events
-import Data.Maybe
-import Control.Monad
+import Lens.Micro ((^.))
 import Types
+import TestData
 
-cellAttr :: Cell -> AttrName
-cellAttr c = attrName $ fromMaybe def $ c^.cellPiece._Just.pieceColor
+{-# LANGUAGE OverloadedStrings #-}
+import Brick
+import Brick.Widgets.Border (border)
+import Brick.Widgets.Center (hCenter, vCenter)
+import Data.Monoid ((<>))
+import qualified Graphics.Vty as V
 
-cellWidget :: Cell -> Widget ()
-cellWidget c = withAttr (cellAttr c) $ str "  "
 
-boardWidget :: Board -> Widget ()
-boardWidget b = vBox $ map hBox $ map (map cellWidget) $ b
+data ChessSquare = Empty | Occupied PieceType
+-- Function to render a chess piece
+renderPiece :: PieceType -> Widget n
+renderPiece piece = str $ case piece of
+  King   -> "K"
+  Queen  -> "Q"
+  Rook   -> "R"
+  Bishop -> "B"
+  Knight -> "N"
+  Pawn   -> "P"
 
-drawUI :: Board -> [Widget ()]
-drawUI b = [center $ padAll 1 $ withBorderStyle unicode $ borderWithLabel (str "Chess") $ boardWidget b]
+-- Function to render a chess square
+renderSquare :: Cell -> Widget n
+renderSquare c = case c ^. cellPiece of
+  Nothing        -> withAttr (attrName "empty") $ str " "
+  Just pc  -> withAttr (attrName "occupied") $ renderPiece (pc ^. pieceType)
 
--- appEvent :: Board -> BrickEvent n e -> EventM n (Next Board)
--- appEvent b (VtyEvent (EvKey (KChar 'q') [])) = halt b
--- appEvent b (VtyEvent (EvKey (KChar 'r') [])) = continue initialState
--- appEvent b _ = continue b
+-- Function to render a chess board
+renderBoard :: Board -> Widget n
+renderBoard board =
+  vBox $ map (hBox . map renderSquare) board
 
-initialState :: Board
-initialState = replicate 8 $ replicate 4 $ Cell white Nothing -- `concat` (Cell black Nothing)
-
--- place white cell beside black cell
--- boardAttr :: Board -> AttrMap
--- boardAttr b = attrMap def $ map (\c -> (cellAttr c, def `withForeColor` (c^.cellColor))) $ concat $ b^.boardCells
-
--- app :: App Board e ()
--- app = App { appDraw = drawUI
---           , appChooseCursor = neverShowCursor
---           , appHandleEvent = appEvent
---           , appStartEvent = return
---           , appAttrMap = const $ boardAttr initialState
---           }
-
+-- The app definition
+app :: App Board e ()
+app =
+  App { appDraw = \s -> [renderBoard s]
+      , appChooseCursor = neverShowCursor
+      , appHandleEvent = \s e -> case e of
+          VtyEvent (V.EvKey V.KEsc []) -> halt s
+          _ -> continue s
+      , appStartEvent = return
+      , appAttrMap = const $ attrMap V.defAttr [(attrName "empty", V.white `on` V.black), (attrName "occupied", V.black `on` V.white)]
+      }
 
 main :: IO ()
 main = do
-  let buildVty = mkVty defaultConfig
-  initialVty <- buildVty
-  void $ customMain initialVty buildVty (Just $ B.boardAttr initialState) app initialState
+  let ib = initialBoard
+  _ <- defaultMain app ib
+  return ()
