@@ -6,10 +6,10 @@ import Graphics.Vty.Attributes
 import Lens.Micro
 import Lens.Micro.TH (makeLenses)
 
-data PlayerColor = Black | White
-data Cell = Cell { _cellColor :: Color, _cellPiece :: Maybe Piece }
-data Piece = Piece { _pieceColor :: PlayerColor, _pieceType :: PieceType, _piecePosition :: (Int, Int) }
-data PieceType = Pawn | Knight | Bishop | Rook | Queen | King
+-- data PlayerColor = Black | White
+data Cell = Cell { _cellColor :: Color, _cellPiece :: Maybe Piece } deriving (Show)
+data Piece = Piece { _pieceColor :: Color, _pieceType :: PieceType } deriving (Show)
+data PieceType = Pawn | Knight | Bishop | Rook | Queen | King deriving (Show)
 
 type Board = [[Cell]]
 

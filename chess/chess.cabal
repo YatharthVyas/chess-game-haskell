@@ -1,9 +1,14 @@
-cabal-version:      2.4
-name:               chess
-version:            0.1.0.0
-
--- A short (one-line) description of the package.
--- synopsis:
+cabal-version:       2.4
+name:                chess
+version:             0.1.0.0
+synopsis:            CSE 230 Project - Chess TUI
+license:             MIT
+license-file:        LICENSE
+author:              Yatharth Vyas, Nimit Vasavat, Mohammed Anas
+maintainer:          y1vyas@ucsd.edu
+category:            Game
+build-type:          Simple
+extra-source-files:  README.md
 
 -- A longer description of the package.
 -- description:
@@ -11,23 +16,18 @@ version:            0.1.0.0
 -- A URL where users can report bugs.
 -- bug-reports:
 
--- The license under which the package is released.
--- license:
-
--- The package author(s).
--- author:
-
--- An email address to which users can send suggestions, bug reports, and patches.
--- maintainer:
-
 -- A copyright notice.
 -- copyright:
 -- category:
 extra-source-files: CHANGELOG.md
 
+
 executable chess
     main-is:          Main.hs
     ghc-options:         -threaded
+    other-modules:   Types,
+                      TestData,
+                      Piece
 
     -- Modules included in this executable, other than Main.
     -- other-modules:
