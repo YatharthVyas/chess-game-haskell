@@ -13,7 +13,8 @@ data PieceType = Pawn | Knight | Bishop | Rook | Queen | King deriving (Eq, Show
 data Dir = DirX | DirY | DirXY  -- used to indicate the direction of movement
 
 type Board = [[Cell]]
-
+data Player = White | Black deriving (Show, Eq)
+data GameState = GameState { board :: Board, currentPlayer :: Player, userInput :: String }
 makeLenses ''Cell
 makeLenses ''Piece
 -- makeLenses ''Board
