@@ -32,28 +32,20 @@ renderPiece piece = case piece of
   Nothing -> let colorAttr = "lightSquare" 
               in withAttr (attrName colorAttr) $ str $ " "
   
-
-
 -- Function to render a chess square
 renderSquare :: Cell -> Widget n
 renderSquare cell = case cell ^. cellPiece of
     Nothing  -> renderPiece Nothing  -- Draw nothing for an empty cell
     Just pc  -> renderPiece (Just pc)  -- Render the piece as before
 
-
 -- Function to render a chess board
 renderBoard :: Board -> Widget n
 renderBoard board =
   vBox $ map (hBox . map renderSquare) board
 
-initialGameState :: GameState
-initialGameState = GameState initialBoard White ""
-
 safeBack :: [a] -> [a]
 safeBack [] = []
 safeBack xs = init xs
-
-
 
 makeMove :: Board -> (Int, Int) -> (Int, Int) -> Board
 makeMove board (startRank, startFile) (endRank, endFile) = 
@@ -99,6 +91,7 @@ app =
               let moveInput = userInput gs
               let validSyntax = isValidChessMove moveInput
               liftIO $ putStrLn $ if validSyntax then "Valid move syntax" else "Invalid move syntax"
+              -- Debugging
               case parseMove gs moveInput of
                   Just (startPos, endPos) -> do
                       liftIO $ putStrLn $ "Start position: " ++ show startPos
