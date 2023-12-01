@@ -26,8 +26,8 @@ getPieceColor p = p ^. pieceColor
 canMove :: Piece -> (Int, Int) -> (Int, Int) -> Bool
 -- Pawn can move 1 step forward or 2 steps forward if it is in its initial position
 canMove (Piece c Pawn) (x,y) (x', y') = y == y' &&  direction * (x - x') <= stepSize
-                                            where stepSize = if (x == 1 && c == black) || (x == 6 && c == white) then 2 else 1
-                                                  direction = if c == white then 1 else -1
+                                            where stepSize = if (x == 1 && c == white) || (x == 6 && c == black) then 2 else 1
+                                                  direction = if c == black then 1 else -1
                                              -- @TODO: need to check color and subtract if diff color
 canMove (Piece _ Knight) (x,y) (x', y') = (abs (x' - x) == 1 && abs (y' - y) == 2) || (abs (x' - x) == 2 && abs (y' - y) == 1)
 -- Bishop can move diagonally eg: [2,3] to [4,5] , [4,1] and so on
@@ -80,7 +80,7 @@ isLegalMove b initial@(x,y) final@(x', y') = case getPieceAt b (x,y) of
 -- False
 
 -- >>> getPieceAt initialBoard (1,1)
--- Just (Piece {_pieceColor = ISOColor 0, _pieceType = Pawn})
+-- Just (Piece {_pieceColor = ISOColor 7, _pieceType = Pawn})
 
 -- moving pawn 2 steps forward
 -- >>> isLegalMove initialBoard (1,1) (3,1)
@@ -97,7 +97,7 @@ isLegalMove b initial@(x,y) final@(x', y') = case getPieceAt b (x,y) of
 -- Nothing
 
 -- >>> getPieceAt initialBoard (0,1)
--- Just (Piece {_pieceColor = ISOColor 0, _pieceType = Knight})
+-- Just (Piece {_pieceColor = ISOColor 7, _pieceType = Knight})
 
 -- >>> isLegalMove initialBoard (0,1) (2,2)
 -- True
