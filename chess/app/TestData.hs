@@ -57,14 +57,14 @@ generateRow y [p1, p2, p3, p4, p5, p6, p7, p8] = [
 
 -- generate the initial layout of a chess board
 initialBoard :: Board
-initialBoard = [generateRow 0 [Just blackRook, Just blackKnight, Just blackBishop, Just blackQueen, Just blackKing, Just blackBishop, Just blackKnight, Just blackRook],
-                generateRow 1 (replicate 8 (Just blackPawn)),
+initialBoard = [generateRow 0 [Just whiteRook, Just whiteKnight, Just whiteBishop, Just whiteQueen, Just whiteKing, Just whiteBishop, Just whiteKnight, Just whiteRook],
+                generateRow 1 (replicate 8 (Just whitePawn)),
                 generateRow 2 (replicate 8 Nothing),
                 generateRow 3 (replicate 8 Nothing),
                 generateRow 4 (replicate 8 Nothing),
                 generateRow 5 (replicate 8 Nothing),
-                generateRow 6 (replicate 8 (Just whitePawn)),
-                generateRow 7 [Just whiteRook, Just whiteKnight, Just whiteBishop, Just whiteQueen, Just whiteKing, Just whiteBishop, Just whiteKnight, Just whiteRook]
+                generateRow 6 (replicate 8 (Just blackPawn)),
+                generateRow 7 [Just blackRook, Just blackKnight, Just blackBishop, Just blackQueen, Just blackKing, Just blackBishop, Just blackKnight, Just blackRook]
                 ]
 
 ---------------------------------------------

@@ -34,7 +34,7 @@ executable chess
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
-    build-depends:  base >=3.8.2.0 ,
+    build-depends:  base >= 3.8.2.0 ,
                     brick == 0.73 ,
                     vty ,
                     containers ,

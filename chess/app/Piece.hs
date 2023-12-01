@@ -65,7 +65,7 @@ isLegalMove b initial@(x,y) final@(x', y') = case getPieceAt b (x,y) of
                                 Nothing -> False
                                 Just p -> x' >= 0 && x' < 8 && y' >= 0 && y' < 8    -- check out of bounds
                                             && canMove p initial final
-                                            && pathClear p b initial final
+                                            -- && pathClear p b initial final
                                             && (case getPieceAt b final of     -- final location should be empty or have a piece of opposite color
                                                     Nothing -> True
                                                     Just p' -> getPieceColor p /= getPieceColor p')
@@ -74,6 +74,7 @@ isLegalMove b initial@(x,y) final@(x', y') = case getPieceAt b (x,y) of
 -------------------------------------------------
 -----   Tests for Piece Movement functions  -----
 -------------------------------------------------
+
 -- moving pawn diagonally
 -- >>> isLegalMove initialBoard (1,1) (2,2)
 -- False

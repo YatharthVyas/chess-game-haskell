@@ -3,7 +3,7 @@
 module Main where
 import Lens.Micro ((^.))
 import Types
-import Piece (isLegalMove, getPieceAt)
+import Piece (isLegalMove, getPieceAt, canMove, pathClear)
 import TestData
 import Data.Char (isDigit, isUpper)
 {-# LANGUAGE OverloadedStrings #-}
@@ -45,8 +45,6 @@ renderBoard :: Board -> Widget n
 renderBoard board =
   vBox $ map (hBox . map renderSquare) board
 
-
-
 data Player = White | Black deriving (Show, Eq)
 data GameState = GameState { board :: Board, currentPlayer :: Player, userInput :: String }
 
@@ -56,7 +54,7 @@ initialGameState = GameState initialBoard White ""
 safeBack :: [a] -> [a]
 safeBack [] = []
 safeBack xs = init xs
-
+-- TODO: Even if it was Black turn, I was able to move a white piece. Need to fix this
 {-
 Algebraic notation for chess moves and their validation
 Cases covered:
@@ -88,17 +86,16 @@ isValidChessMove move
 
 
 -- Now that a move is valid, we need to write functions which take the Gamestate and the move and update the board if the move is valid
-
 fileToIndex :: Char -> Int
 fileToIndex file = fromEnum file - fromEnum 'a'
 
 rankToIndex :: GameState -> Char -> Int
-rankToIndex gs rank = if currentPlayer gs == White then 7 - (fromEnum rank - fromEnum '1') else fromEnum rank - fromEnum '1'   -- Subtract from 8 for zero-indexing
+rankToIndex gs rank = fromEnum rank - fromEnum '1'  -- Subtract from 8 for zero-indexing
 
 -- Parses a move string (e.g., "e2e4", "e4", "Nf3") into start and end board indices
 parseMove :: GameState -> String -> Maybe ((Int, Int), (Int, Int))
 parseMove gs move
-  | length move == 4 = 
+  | length move == 4 =
         let startFile = fileToIndex (move !! 0)
             startRank = rankToIndex gs (move !! 1)
             endFile = fileToIndex (move !! 2)
@@ -108,7 +105,7 @@ parseMove gs move
       let startFile = fileToIndex (move !! 0)
           startRank = rankToIndex gs (move !! 1)
           endFile = fileToIndex (move !! 0)  -- The end file is the same as the start file for pawn moves
-          endRank = rankToIndex gs (move !! 1) + if currentPlayer gs == White then 1 else -1  -- Adjust rank for pawn move
+          endRank = rankToIndex gs (move !! 1) + if (currentPlayer gs) == White then 1 else -1 -- Adjust rank for pawn move
       in Just ((startRank, startFile), (endRank, endFile))
   | length move == 3 && isKnightMove move =  -- Handle knight move (e.g., "Nf3")
       let startFile = fileToIndex (move !! 1)
@@ -164,10 +161,10 @@ executeMove gs moveInput =
         return gs { board = newBoard, currentPlayer = if currentPlayer gs == White then Black else White, userInput = "" }
       else do
         putStrLn "Invalid move. Try again."
-        return gs
+        return gs { userInput = "" }
     Nothing -> do
       putStrLn "Invalid move format."
-      return gs
+      return gs { userInput = "" }
 
 -- The app definition
 app :: App GameState e ()
@@ -194,6 +191,10 @@ app =
                       liftIO $ putStrLn $ "Start position: " ++ show startPos
                       liftIO $ putStrLn $ "End position: " ++ show endPos
                   Nothing -> liftIO $ putStrLn "Failed to parse move"
+              
+              case getPieceAt (board gs) (2,4) of
+                                Nothing -> liftIO $ putStrLn $ "No piece at (2,4)"
+                                Just p -> liftIO $ putStrLn $ if pathClear p (board gs) (2,4) (1,4) then "Can move in region" else "Cannot move in region"
               -- Execute the move if the syntax is valid
               newGameState <- if validSyntax
                               then liftIO $ executeMove gs moveInput
