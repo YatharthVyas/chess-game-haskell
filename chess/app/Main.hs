@@ -107,15 +107,17 @@ parseMove gs move
           endFile = fileToIndex (move !! 0)  -- The end file is the same as the start file for pawn moves
           endRank = rankToIndex gs (move !! 1) + if (currentPlayer gs) == White then 1 else -1 -- Adjust rank for pawn move
       in Just ((startRank, startFile), (endRank, endFile))
-  | length move == 3 && isKnightMove move =  -- Handle knight move (e.g., "Nf3")
-      let startFile = fileToIndex (move !! 1)
-          startRank = rankToIndex gs (move !! 2)
+  | length move == 3 && isKnightMove move = -- TODO: This is a very imperfect way of parsing knight moves
+      let startFile = fileToIndex (move !! 1) -- b or f
+          startRank = rankToIndex gs (move !! 2) -- 
           (deltaRank, deltaFile) = case move !! 0 of
-            'N' -> (1, 2)  -- Knight moves have a fixed relative offset
-            _ -> (-1, -2)
+            'N' -> (2, 1)  -- Knight moves have a fixed relative offset
+            _ -> (-2, -1)
           endFile = startFile + deltaFile
           endRank = startRank + deltaRank
-      in if isValidBoardPosition endRank endFile then Just ((startRank, startFile), (endRank, endFile)) else Nothing
+          in if isValidBoardPosition (startRank + deltaRank) (startFile + deltaFile) 
+              then Just ((startRank, startFile), (startRank + deltaRank, startFile + deltaFile))
+              else Just ((startRank, startFile), (startRank - deltaRank, startFile - deltaFile))
   | otherwise = Nothing
 
 -- Check if the move is a valid pawn move (e.g., "e4")
@@ -185,36 +187,25 @@ app =
               let moveInput = userInput gs
               let validSyntax = isValidChessMove moveInput
               liftIO $ putStrLn $ if validSyntax then "Valid move syntax" else "Invalid move syntax"
-              liftIO $ putStrLn ("User input: " ++ moveInput)  -- Debugging output
               case parseMove gs moveInput of
                   Just (startPos, endPos) -> do
                       liftIO $ putStrLn $ "Start position: " ++ show startPos
                       liftIO $ putStrLn $ "End position: " ++ show endPos
                   Nothing -> liftIO $ putStrLn "Failed to parse move"
-              
-              case getPieceAt (board gs) (2,4) of
-                                Nothing -> liftIO $ putStrLn $ "No piece at (2,4)"
-                                Just p -> liftIO $ putStrLn $ if pathClear p (board gs) (2,4) (1,4) then "Can move in region" else "Cannot move in region"
+          
               -- Execute the move if the syntax is valid
               newGameState <- if validSyntax
                               then liftIO $ executeMove gs moveInput
                               else return gs
               continue newGameState
           VtyEvent (V.EvKey V.KBS []) -> continue $ gs { userInput = safeBack (userInput gs) }
-          VtyEvent (V.EvKey (V.KChar 'm') []) -> captureMove gs -- 'm' for move, this is a placeholder
           _ -> continue gs
       , appStartEvent = return
       , appAttrMap = const $ attrMap V.defAttr [ (attrName "blackPiece", V.white `on` V.black)
                                                 , (attrName "whitePiece", V.black `on` V.white)
                                                 , (attrName "lightSquare", (V.rgbColor 220 220 220) `on` V.white) -- Cant directly use V.rgbColor in attrMap
-                                                , (attrName "darkSquare", V.black `on` V.green)
                                                 ]
       }
-captureMove :: GameState -> EventM n (Next GameState)
-captureMove gs = do
-
-  -- Here, you would implement the logic to capture and process the move
-  continue gs  -- Return the updated GameState
 
 
 main :: IO ()
