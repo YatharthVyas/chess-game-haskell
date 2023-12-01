@@ -74,7 +74,6 @@ isLegalMove b initial@(x,y) final@(x', y') = case getPieceAt b (x,y) of
 -------------------------------------------------
 -----   Tests for Piece Movement functions  -----
 -------------------------------------------------
-
 -- moving pawn diagonally
 -- >>> isLegalMove initialBoard (1,1) (2,2)
 -- False
