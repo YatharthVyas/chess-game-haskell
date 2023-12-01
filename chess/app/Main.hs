@@ -19,26 +19,27 @@ import Control.Monad.IO.Class (liftIO)
 
 data ChessSquare = Empty | Occupied PieceType
 -- Function to render a chess piece
-renderPiece :: Maybe Piece -> Widget n
-renderPiece piece = case piece of
-  Just a -> let colorAttr = if a ^. pieceColor == V.black then "blackPiece" else "whitePiece"
+renderPiece :: Maybe Piece -> V.Color -> Widget n
+renderPiece piece c = case piece of
+  Just a -> let colorAttr = if c == V.black then "blackPiece" else "whitePiece"
+                pColor = a ^. pieceColor
               in  withAttr (attrName colorAttr) $ str $ case a ^. pieceType of
-                King   -> "K"
-                Queen  -> "Q"
-                Rook   -> "R"
-                Bishop -> "B"
-                Knight -> "N"
-                Pawn   -> "P"
-  Nothing -> let colorAttr = "lightSquare" 
-              in withAttr (attrName colorAttr) $ str $ " "
-  
+                  King   -> if pColor == V.black then " ♚ " else " ♔ "
+                  Queen  -> if pColor == V.black then " ♛ " else " ♕ "
+                  Rook   -> if pColor == V.black then " ♜ " else " ♖ "
+                  Pawn   -> if pColor == V.black then " ♟ " else " ♙ "
+                  Bishop -> if pColor == V.black then " ♝ " else " ♗ "
+                  Knight -> if pColor == V.black then " ♞ " else " ♘ "
+  Nothing -> let colorAttr = if c == V.black then "blackSquare" else "lightSquare"
+              in withAttr (attrName colorAttr) $ str $ "   "
+
 
 
 -- Function to render a chess square
 renderSquare :: Cell -> Widget n
 renderSquare cell = case cell ^. cellPiece of
-    Nothing  -> renderPiece Nothing  -- Draw nothing for an empty cell
-    Just pc  -> renderPiece (Just pc)  -- Render the piece as before
+    Nothing  -> renderPiece Nothing (cell ^. cellColor)  -- Draw nothing for an empty cell
+    Just pc  -> renderPiece (Just pc) (cell ^. cellColor)  -- Render the piece as before
 
 
 -- Function to render a chess board
