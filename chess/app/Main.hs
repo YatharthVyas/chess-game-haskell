@@ -110,6 +110,18 @@ parseMove gs move
   | length move == 3 && isKnightMove move = -- TODO: This is a very imperfect way of parsing knight moves
       let startFile = fileToIndex (move !! 1) -- b or f
           startRank = rankToIndex gs (move !! 2) -- 
+          {-
+          Knight moves in chess are typically represented by their final position, i.e,
+          Nf3 means the knight moves to f3. However, if there are two knights that can move to f3,
+          then the move is represented as Nbf3, where b is the file of the knight that is moving.
+          
+          In our case, currently I am assuming that move is represented as Nb1
+          which means take the knight in b file which is at rank 1 and it always gets moved to c3
+
+          What we can do is always use Nbc3 and then we can parse it as follows:
+          Take the knight at b file, which is at rank 1 and move it to file c and rank 3
+          This will remove ambiguity
+          -}
           (deltaRank, deltaFile) = case move !! 0 of
             'N' -> (2, 1)  -- Knight moves have a fixed relative offset
             _ -> (-2, -1)
