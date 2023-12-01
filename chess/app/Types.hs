@@ -14,7 +14,10 @@ data Dir = DirX | DirY | DirXY  -- used to indicate the direction of movement
 
 type Board = [[Cell]]
 data Player = White | Black deriving (Show, Eq)
-data GameState = GameState { board :: Board, currentPlayer :: Player, userInput :: String }
+data Game = Game { board :: Board, currentPlayer :: Player, userInput :: String } deriving (Show)
+data GameState m = MonadState Game m
 makeLenses ''Cell
 makeLenses ''Piece
 -- makeLenses ''Board
+
+-- Note: can avoid lenses

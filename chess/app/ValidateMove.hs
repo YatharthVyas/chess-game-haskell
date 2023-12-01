@@ -25,7 +25,7 @@ isValidChessMove move
       [file, rank, '=', promPiece] -> isFile file && isRank rank && isPromotionPiece promPiece  -- Pawn promotion
       _ -> False
   where
-    removeCheckCheckmate s = filter (`notElem` ['+', '#']) s 
+    removeCheckCheckmate s = filter (`notElem` ['+', '#']) s
     isFile f = f `elem` ['a'..'h']
     isRank r = r `elem` ['1'..'8']
     isPiece p = isUpper p && p `elem` "KQRBN"
@@ -37,32 +37,33 @@ isValidChessMove move
 fileToIndex :: Char -> Int
 fileToIndex file = fromEnum file - fromEnum 'a'
 
-rankToIndex :: GameState -> Char -> Int
-rankToIndex gs rank = fromEnum rank - fromEnum '1'  -- Subtract from 8 for zero-indexing
+rankToIndex ::  Char -> Int
+rankToIndex rank = fromEnum rank - fromEnum '1'  -- Subtract from 8 for zero-indexing
 
 -- Parses a move string (e.g., "e2e4", "e4", "Nf3") into start and end board indices
-parseMove :: GameState -> String -> Maybe ((Int, Int), (Int, Int))
-parseMove gs move
+parseMove :: Player -> String -> Maybe ((Int, Int), (Int, Int))
+parseMove player move
   | length move == 4 =
         let startFile = fileToIndex (move !! 0)
-            startRank = rankToIndex gs (move !! 1)
+            startRank = rankToIndex (move !! 1)
             endFile = fileToIndex (move !! 2)
-            endRank = rankToIndex gs (move !! 3)
+            endRank = rankToIndex (move !! 3)
         in Just ((startRank, startFile), (endRank, endFile))
-  | length move == 2 && isPawnMove move =  -- Handle pawn move (e.g., "e4")
+  | length move == 2 && isPawnMove move = do { -- Handle pawn move (e.g., "e4")
       let startFile = fileToIndex (move !! 0)
-          startRank = rankToIndex gs (move !! 1)
+          startRank = rankToIndex (move !! 1)
           endFile = fileToIndex (move !! 0)  -- The end file is the same as the start file for pawn moves
-          endRank = rankToIndex gs (move !! 1) + if (currentPlayer gs) == White then 1 else -1 -- Adjust rank for pawn move
+          endRank = rankToIndex (move !! 1) + if player == White then 1 else -1 -- Adjust rank for pawn move
       in Just ((startRank, startFile), (endRank, endFile))
+  }
   | length move == 3 && isKnightMove move = -- TODO: This is a very imperfect way of parsing knight moves
       let startFile = fileToIndex (move !! 1) -- b or f
-          startRank = rankToIndex gs (move !! 2) -- 
+          startRank = rankToIndex (move !! 2) --
           {-
           Knight moves in chess are typically represented by their final position, i.e,
           Nf3 means the knight moves to f3. However, if there are two knights that can move to f3,
           then the move is represented as Nbf3, where b is the file of the knight that is moving.
-          
+
           In our case, currently I am assuming that move is represented as Nb1
           which means take the knight in b file which is at rank 1 and it always gets moved to c3
 
@@ -75,7 +76,7 @@ parseMove gs move
             _ -> (-2, -1)
           endFile = startFile + deltaFile
           endRank = startRank + deltaRank
-          in if isValidBoardPosition (startRank + deltaRank) (startFile + deltaFile) 
+          in if isValidBoardPosition (startRank + deltaRank) (startFile + deltaFile)
               then Just ((startRank, startFile), (startRank + deltaRank, startFile + deltaFile))
               else Just ((startRank, startFile), (startRank - deltaRank, startFile - deltaFile))
   | otherwise = Nothing

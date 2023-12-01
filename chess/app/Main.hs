@@ -9,9 +9,12 @@ import TestData
 import Data.Char (isDigit, isUpper)
 {-# LANGUAGE OverloadedStrings #-}
 import Brick
+import Brick.Main
+import Brick.Widgets.Core
 import Brick.Widgets.Border.Style
 import Brick.Widgets.Border (border,hBorder ,vBorder, borderWithLabel)
 import Brick.Widgets.Center (hCenter, vCenter)
+import Control.Monad.State
 import Data.Monoid ((<>))
 import qualified Graphics.Vty as V
  -- Import liftIO
@@ -47,17 +50,16 @@ renderBoard :: Board -> Widget n
 renderBoard board =
   vBox $ map (hBox . map renderSquare) board
 
-initialGameState :: GameState
-initialGameState = GameState initialBoard White ""
+initialGameState :: GameState m => m
+initialGameState = return (Game initialBoard White "")
 
 safeBack :: [a] -> [a]
 safeBack [] = []
 safeBack xs = init xs
 
 
-
 makeMove :: Board -> (Int, Int) -> (Int, Int) -> Board
-makeMove board (startRank, startFile) (endRank, endFile) = 
+makeMove board (startRank, startFile) (endRank, endFile) =
     let startCell = (board !! startRank) !! startFile
         emptyCell = Cell (_cellColor startCell) Nothing  -- Create an empty cell with the same color
         updatedRowStart = take startFile (board !! startRank) ++ [emptyCell] ++ drop (startFile + 1) (board !! startRank)
@@ -66,10 +68,10 @@ makeMove board (startRank, startFile) (endRank, endFile) =
         updatedBoardEnd = take endRank updatedBoardStart ++ [updatedRowEnd] ++ drop (endRank + 1) updatedBoardStart
     in updatedBoardEnd
 
-executeMove :: GameState -> String -> IO GameState
-executeMove gs moveInput = 
+executeMove :: GameState m => m -> String -> IO m
+executeMove gs moveInput =
   case parseMove gs moveInput of
-    Just (startPos, endPos) -> 
+    Just (startPos, endPos) ->
       if isLegalMove (board gs) startPos endPos then do
         putStrLn "Move executed."
         let newBoard = makeMove (board gs) startPos endPos
@@ -81,39 +83,50 @@ executeMove gs moveInput =
       putStrLn "Invalid move format."
       return gs { userInput = "" }
 
+appEvent :: GameState m => BrickEvent () e -> EventM () (m) ()
+appEvent (VtyEvent e) = do
+    gs <- get
+    case e of
+         V.EvKey (V.KChar 'q') [] -> halt
+         V.EvKey (V.KEsc) [] -> halt
+        --  V.EvKey (V.KChar c) [] -> return gs
+         _ -> return ()
+appEvent _ = return ()
+
 -- The app definition
-app :: App GameState e ()
+app :: GameState m => App m e ()
 app =
-  App {appDraw = \gs -> 
-            [ vBox [ renderBoard (board gs) 
+  App {appDraw = \gs ->
+            [ vBox [ renderBoard (board gs)
                    , padLeft (Pad 2) (str $ "Current turn: " ++ show (currentPlayer gs))
                    , padLeft (Pad 2) (str "Enter your move: ")
                    , padLeft (Pad 2) (str $ userInput gs)
                    ]
             ]
       , appChooseCursor = showFirstCursor
-      , appHandleEvent = \gs e -> case e of
-          VtyEvent (V.EvKey V.KEsc []) -> halt gs
-          VtyEvent (V.EvKey (V.KChar c) []) -> continue $ gs { userInput = userInput gs ++ [c] }
-          VtyEvent (V.EvKey V.KEnter []) -> do
-              -- Check if the move syntax is valid
-              let moveInput = userInput gs
-              let validSyntax = isValidChessMove moveInput
-              liftIO $ putStrLn $ if validSyntax then "Valid move syntax" else "Invalid move syntax"
-              case parseMove gs moveInput of
-                  Just (startPos, endPos) -> do
-                      liftIO $ putStrLn $ "Start position: " ++ show startPos
-                      liftIO $ putStrLn $ "End position: " ++ show endPos
-                  Nothing -> liftIO $ putStrLn "Failed to parse move"
-          
-              -- Execute the move if the syntax is valid
-              newGameState <- if validSyntax
-                              then liftIO $ executeMove gs moveInput
-                              else return gs
-              continue newGameState
-          VtyEvent (V.EvKey V.KBS []) -> continue $ gs { userInput = safeBack (userInput gs) }
-          _ -> continue gs
-      , appStartEvent = return
+      , appHandleEvent = appEvent
+        -- \gs e -> case e of
+        --   VtyEvent (V.EvKey V.KEsc []) -> halt gs
+        --   VtyEvent (V.EvKey (V.KChar c) []) -> continue $ gs { userInput = userInput gs ++ [c] }
+        --   VtyEvent (V.EvKey V.KEnter []) -> do
+        --       -- Check if the move syntax is valid
+        --       let moveInput = userInput gs
+        --       let validSyntax = isValidChessMove moveInput
+        --       liftIO $ putStrLn $ if validSyntax then "Valid move syntax" else "Invalid move syntax"
+        --       case parseMove gs moveInput of
+        --           Just (startPos, endPos) -> do
+        --               liftIO $ putStrLn $ "Start position: " ++ show startPos
+        --               liftIO $ putStrLn $ "End position: " ++ show endPos
+        --           Nothing -> liftIO $ putStrLn "Failed to parse move"
+
+        --       -- Execute the move if the syntax is valid
+        --       newGameState <- if validSyntax
+        --                       then liftIO $ executeMove gs moveInput
+        --                       else return gs
+        --       continue newGameState
+        --   VtyEvent (V.EvKey V.KBS []) -> continue $ gs { userInput = safeBack (userInput gs) }
+        --   _ -> continue gs
+      , appStartEvent = return ()
       , appAttrMap = const $ attrMap V.defAttr [ (attrName "blackPiece", V.white `on` V.black)
                                                 , (attrName "whitePiece", V.black `on` V.white)
                                                 , (attrName "lightSquare", (V.rgbColor 220 220 220) `on` V.white) -- Cant directly use V.rgbColor in attrMap
@@ -123,6 +136,5 @@ app =
 
 main :: IO ()
 main = do
-  let initialState = GameState initialBoard White ""
-  _ <- defaultMain app initialState
+  _ <- defaultMain app initialGameState
   return ()
