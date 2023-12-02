@@ -21,20 +21,26 @@ import qualified Graphics.Vty as V
 import Control.Monad.IO.Class (liftIO)
 
 data ChessSquare = Empty | Occupied PieceType
+
+
 -- Function to render a chess piece
+
+renderPieceText :: String -> String -> String -> String
+renderPieceText pColor blackText whiteText = if pColor == "blackPiece" then blackText else whiteText
+
 renderPiece :: Maybe Piece -> V.Color -> Widget n
 renderPiece piece c = case piece of
-  Just a -> let colorAttr = if c == V.black then "blackPiece" else "whitePiece"
-                pColor = a ^. pieceColor
-              in  withAttr (attrName colorAttr) $ str $ case a ^. pieceType of
-                  King   -> if pColor == V.black then " ♚ " else " ♔ "
-                  Queen  -> if pColor == V.black then " ♛ " else " ♕ "
-                  Rook   -> if pColor == V.black then " ♜ " else " ♖ "
-                  Pawn   -> if pColor == V.black then " ♟ " else " ♙ "
-                  Bishop -> if pColor == V.black then " ♝ " else " ♗ "
-                  Knight -> if pColor == V.black then " ♞ " else " ♘ "
+  Just a -> let colorAttr = if c == V.black then "blackCell" else "whiteCell"
+                pColor = if a ^. pieceColor == V.black then "blackPiece" else "whitePiece"
+              in  withAttr (attrName $ pColor ++ colorAttr) $ str $ case a ^. pieceType of
+                  King   -> renderPieceText pColor " ♚ " " ♔ "
+                  Queen  -> renderPieceText pColor " ♛ " " ♕ "
+                  Rook   -> renderPieceText pColor " ♜ " " ♖ "
+                  Pawn   -> renderPieceText pColor " ♟ " " ♙ "
+                  Bishop -> renderPieceText pColor " ♝ " " ♗ "
+                  Knight -> renderPieceText pColor " ♞ " " ♘ "
   Nothing -> let colorAttr = if c == V.black then "blackSquare" else "lightSquare"
-              in withAttr (attrName colorAttr) $ str $ "   "
+              in withAttr (attrName colorAttr) $ str "   "
 
 
 
@@ -88,7 +94,7 @@ appEvent (VtyEvent e) = do
     gs <- get
     case e of
          V.EvKey (V.KChar 'q') [] -> halt
-         V.EvKey (V.KEsc) [] -> halt
+         V.EvKey V.KEsc [] -> halt
          V.EvKey (V.KChar c) [] -> do
              let newInput = userInput gs ++ [c]
              put(gs { userInput = newInput })
@@ -102,23 +108,24 @@ appEvent (VtyEvent e) = do
              -- Check if the move syntax is valid
              let moveInput = userInput gs
              let validSyntax = isValidChessMove moveInput
-             liftIO $ putStrLn $ if validSyntax then "Valid move syntax" else "Invalid move syntax"
-             case parseMove (currentPlayer gs) moveInput of
-                 Just (startPos, endPos) -> do
-                     liftIO $ putStrLn $ "Start position: " ++ show startPos
-                     liftIO $ putStrLn $ "End position: " ++ show endPos
-                 Nothing -> liftIO $ putStrLn "Failed to parse move"
 
-             -- Execute the move if the syntax is valid
+             -- the below lines are messing up the alignment of chessboard
+            --  liftIO $ putStrLn $ if validSyntax then "Valid move syntax" else "Invalid move syntax"
+            --  case parseMove (currentPlayer gs) moveInput of
+            --      Just (startPos, endPos) -> do
+            --          liftIO $ putStrLn $ "Start position: " ++ show startPos
+            --          liftIO $ putStrLn $ "End position: " ++ show endPos
+            --      Nothing -> liftIO $ putStrLn "Failed to parse move"
+
+            --  Execute the move if the syntax is valid
              newGameState <- if validSyntax
                              then liftIO $ executeMove gs moveInput
                              else return gs
-             put(newGameState)
+             put newGameState
              return()
          _ -> return ()
 appEvent _ = return ()
 
--- The app definition
 app :: App GameState e ()
 app =
   App {appDraw = \gs ->
@@ -131,9 +138,12 @@ app =
       , appChooseCursor = showFirstCursor
       , appHandleEvent = appEvent
       , appStartEvent = return ()
-      , appAttrMap = const $ attrMap V.defAttr [ (attrName "blackPiece", V.white `on` V.black)
-                                                , (attrName "whitePiece", V.black `on` V.white)
-                                                , (attrName "lightSquare", (V.rgbColor 220 220 220) `on` V.white) -- Cant directly use V.rgbColor in attrMap
+      , appAttrMap = const $ attrMap V.defAttr [ (attrName "blackPiecewhiteCell", V.black `on` V.rgbColor 227 193 111),
+                                                  (attrName "whitePiecewhiteCell", V.white `on` V.rgbColor 227 193 111),
+                                                  (attrName "blackPieceblackCell", V.black `on` V.rgbColor 184 139 74),
+                                                  (attrName "whitePieceblackCell", V.white `on` V.rgbColor 184 139 74),
+                                                  (attrName "lightSquare", V.rgbColor 220 220 220 `on` V.rgbColor 227 193 111),
+                                                  (attrName "blackSquare", V.rgbColor 220 220 220 `on` V.rgbColor 184 139 74)
                                                 ]
       }
 
