@@ -1,4 +1,6 @@
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE ConstraintKinds           #-}
+{-# LANGUAGE FlexibleContexts          #-}
 
 module Types where
 
@@ -14,8 +16,8 @@ data Dir = DirX | DirY | DirXY  -- used to indicate the direction of movement
 
 type Board = [[Cell]]
 data Player = White | Black deriving (Show, Eq)
-data Game = Game { board :: Board, currentPlayer :: Player, userInput :: String } deriving (Show)
-data GameState m = MonadState Game m
+data GameState = GameState { board :: Board, currentPlayer :: Player, userInput :: String } deriving (Show)
+makeLenses ''GameState
 makeLenses ''Cell
 makeLenses ''Piece
 -- makeLenses ''Board

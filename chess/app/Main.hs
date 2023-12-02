@@ -50,8 +50,8 @@ renderBoard :: Board -> Widget n
 renderBoard board =
   vBox $ map (hBox . map renderSquare) board
 
-initialGameState :: GameState m => m
-initialGameState = return (Game initialBoard White "")
+initialGameState :: GameState
+initialGameState = GameState initialBoard White ""
 
 safeBack :: [a] -> [a]
 safeBack [] = []
@@ -68,9 +68,9 @@ makeMove board (startRank, startFile) (endRank, endFile) =
         updatedBoardEnd = take endRank updatedBoardStart ++ [updatedRowEnd] ++ drop (endRank + 1) updatedBoardStart
     in updatedBoardEnd
 
-executeMove :: GameState m => m -> String -> IO m
+executeMove :: GameState -> String -> IO GameState
 executeMove gs moveInput =
-  case parseMove gs moveInput of
+  case parseMove (currentPlayer gs) moveInput of
     Just (startPos, endPos) ->
       if isLegalMove (board gs) startPos endPos then do
         putStrLn "Move executed."
@@ -83,7 +83,7 @@ executeMove gs moveInput =
       putStrLn "Invalid move format."
       return gs { userInput = "" }
 
-appEvent :: GameState m => BrickEvent () e -> EventM () (m) ()
+appEvent :: BrickEvent () e -> EventM () GameState ()
 appEvent (VtyEvent e) = do
     gs <- get
     case e of
@@ -93,19 +93,7 @@ appEvent (VtyEvent e) = do
          _ -> return ()
 appEvent _ = return ()
 
--- The app definition
-app :: GameState m => App m e ()
-app =
-  App {appDraw = \gs ->
-            [ vBox [ renderBoard (board gs)
-                   , padLeft (Pad 2) (str $ "Current turn: " ++ show (currentPlayer gs))
-                   , padLeft (Pad 2) (str "Enter your move: ")
-                   , padLeft (Pad 2) (str $ userInput gs)
-                   ]
-            ]
-      , appChooseCursor = showFirstCursor
-      , appHandleEvent = appEvent
-        -- \gs e -> case e of
+-- \gs e -> case e of
         --   VtyEvent (V.EvKey V.KEsc []) -> halt gs
         --   VtyEvent (V.EvKey (V.KChar c) []) -> continue $ gs { userInput = userInput gs ++ [c] }
         --   VtyEvent (V.EvKey V.KEnter []) -> do
@@ -126,6 +114,19 @@ app =
         --       continue newGameState
         --   VtyEvent (V.EvKey V.KBS []) -> continue $ gs { userInput = safeBack (userInput gs) }
         --   _ -> continue gs
+
+-- The app definition
+app :: App GameState e ()
+app =
+  App {appDraw = \gs ->
+            [ vBox [ renderBoard (board gs)
+                   , padLeft (Pad 2) (str $ "Current turn: " ++ show (currentPlayer gs))
+                   , padLeft (Pad 2) (str "Enter your move: ")
+                   , padLeft (Pad 2) (str $ userInput gs)
+                   ]
+            ]
+      , appChooseCursor = showFirstCursor
+      , appHandleEvent = appEvent
       , appStartEvent = return ()
       , appAttrMap = const $ attrMap V.defAttr [ (attrName "blackPiece", V.white `on` V.black)
                                                 , (attrName "whitePiece", V.black `on` V.white)
