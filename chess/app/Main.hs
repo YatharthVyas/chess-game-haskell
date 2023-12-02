@@ -66,11 +66,16 @@ safeBack xs = init xs
 
 makeMove :: Board -> (Int, Int) -> (Int, Int) -> Board
 makeMove board (startRank, startFile) (endRank, endFile) =
+  -- Write the code such that we extract the color of the cell of the end position and ensure that it doesnt change when we copy over the start cell
+  -- This will ensure that the color of the cell is not changed when we move a piece
     let startCell = (board !! startRank) !! startFile
+        endCell = (board !! endRank) !! endFile
+        -- We want the updated position to have the piece from the start position and the color from the end position
+        newStartCell = Cell (_cellColor endCell) (_cellPiece startCell)
         emptyCell = Cell (_cellColor startCell) Nothing  -- Create an empty cell with the same color
         updatedRowStart = take startFile (board !! startRank) ++ [emptyCell] ++ drop (startFile + 1) (board !! startRank)
         updatedBoardStart = take startRank board ++ [updatedRowStart] ++ drop (startRank + 1) board
-        updatedRowEnd = take endFile (updatedBoardStart !! endRank) ++ [startCell] ++ drop (endFile + 1) (updatedBoardStart !! endRank)
+        updatedRowEnd = take endFile (updatedBoardStart !! endRank) ++ [newStartCell] ++ drop (endFile + 1) (updatedBoardStart !! endRank)
         updatedBoardEnd = take endRank updatedBoardStart ++ [updatedRowEnd] ++ drop (endRank + 1) updatedBoardStart
     in updatedBoardEnd
 
@@ -116,7 +121,6 @@ appEvent (VtyEvent e) = do
             --          liftIO $ putStrLn $ "Start position: " ++ show startPos
             --          liftIO $ putStrLn $ "End position: " ++ show endPos
             --      Nothing -> liftIO $ putStrLn "Failed to parse move"
-
             --  Execute the move if the syntax is valid
              newGameState <- if validSyntax
                              then liftIO $ executeMove gs moveInput
