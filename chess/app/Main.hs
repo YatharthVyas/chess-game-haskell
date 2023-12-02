@@ -89,13 +89,36 @@ appEvent (VtyEvent e) = do
     case e of
          V.EvKey (V.KChar 'q') [] -> halt
          V.EvKey (V.KEsc) [] -> halt
-        --  V.EvKey (V.KChar c) [] -> return gs
+         V.EvKey (V.KChar c) [] -> do
+             let newInput = userInput gs ++ [c]
+             put(gs { userInput = newInput })
+             return ()
+         -- backspace
+         V.EvKey V.KBS [] -> do
+             let newInput = safeBack (userInput gs)
+             put(gs { userInput = newInput })
+             return ()
+         V.EvKey V.KEnter [] -> do
+             -- Check if the move syntax is valid
+             let moveInput = userInput gs
+             let validSyntax = isValidChessMove moveInput
+             liftIO $ putStrLn $ if validSyntax then "Valid move syntax" else "Invalid move syntax"
+             case parseMove (currentPlayer gs) moveInput of
+                 Just (startPos, endPos) -> do
+                     liftIO $ putStrLn $ "Start position: " ++ show startPos
+                     liftIO $ putStrLn $ "End position: " ++ show endPos
+                 Nothing -> liftIO $ putStrLn "Failed to parse move"
+
+             -- Execute the move if the syntax is valid
+             newGameState <- if validSyntax
+                             then liftIO $ executeMove gs moveInput
+                             else return gs
+             put(newGameState)
+             return()
          _ -> return ()
 appEvent _ = return ()
 
 -- \gs e -> case e of
-        --   VtyEvent (V.EvKey V.KEsc []) -> halt gs
-        --   VtyEvent (V.EvKey (V.KChar c) []) -> continue $ gs { userInput = userInput gs ++ [c] }
         --   VtyEvent (V.EvKey V.KEnter []) -> do
         --       -- Check if the move syntax is valid
         --       let moveInput = userInput gs
@@ -112,8 +135,6 @@ appEvent _ = return ()
         --                       then liftIO $ executeMove gs moveInput
         --                       else return gs
         --       continue newGameState
-        --   VtyEvent (V.EvKey V.KBS []) -> continue $ gs { userInput = safeBack (userInput gs) }
-        --   _ -> continue gs
 
 -- The app definition
 app :: App GameState e ()
