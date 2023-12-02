@@ -22,9 +22,9 @@ This game operates on a turn-based system where each player takes turns inputtin
 
 To achieve this, we will utilize the brick library to construct a text-based grid representing the chessboard. We will define a Cell type for each square, which can either be empty or contain a piece. A function will be employed to display these cells, and another function will arrange them into a complete board. The application will set up visual attributes and manage events, ultimately displaying the initial state of the chessboard.
 
-### Milestones
+## Milestones
 
-## Architecture
+### Architecture
 
 Types.hs: This contains the definition for all types that are used in our Project. It includes the different components of chess board such as cells, pieces which are combined into the GameState type.
 
@@ -42,7 +42,7 @@ Main.hs: contains the rendering code that is used to draw the chess board and ha
 
 ValidateMove.hs: This contains the parser code for reading user input and then translating that to legal moves on the chess board.
 
-# Flow of the Game
+#### Flow of the Game
 
 1. You enter a move
 2. Check happens to see if it follows convention or not
@@ -53,14 +53,14 @@ ValidateMove.hs: This contains the parser code for reading user input and then t
 7. makeMove makes the change to the board and returns the updated board
 8. executeMove returns the board it receives from makeMove
 
-## Challenges
+### Challenges
 
 We had to implement a global variable for the GameState that would be similar to a Monad, with much debugging and some help from TA George, we were able to implement this using the lenses library in Haskell. Another challenging part was to implement the logic for the movement of the pieces. We had to implement a function that would take the current position of the piece and the new position of the piece and then check if the move is legal or not. We had to implement this for all the pieces wherein each piece has a different movement constraint. A issue we faced was to represent the pieces on the chess board. Since the pieces are either black or white, they camouflage with the chessboard and sometimes you cannot distinguish the presence of a black piece on a black chessboard cell which is why we changed the color of the chessboard to a lighter shade of brown.
 
-## Do you expect to meet your goals until the deadline?
+### Do you expect to meet your goals until the deadline?
 
 We feel that we should be able to make a Chess Game with all rules incorporated before the deadline but it would be difficult to make this a networked game. We are aiming at perfecting what we have before prioritizing more ambitious goals that are good to have such as a "Networked Multiplayer Mode".
 
-## If not, how will you modify your goals?
+### If not, how will you modify your goals?
 
 By first focusing on the more important parts of the project and splitting the work into independent segments, we will work in parallel on finishing the remaining parts for the implementation of a basic single player chess game. We might take up the Networked/Multiplayer mode incase we are left with enough time at the end of the project to build it
