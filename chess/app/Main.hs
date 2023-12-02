@@ -118,24 +118,6 @@ appEvent (VtyEvent e) = do
          _ -> return ()
 appEvent _ = return ()
 
--- \gs e -> case e of
-        --   VtyEvent (V.EvKey V.KEnter []) -> do
-        --       -- Check if the move syntax is valid
-        --       let moveInput = userInput gs
-        --       let validSyntax = isValidChessMove moveInput
-        --       liftIO $ putStrLn $ if validSyntax then "Valid move syntax" else "Invalid move syntax"
-        --       case parseMove gs moveInput of
-        --           Just (startPos, endPos) -> do
-        --               liftIO $ putStrLn $ "Start position: " ++ show startPos
-        --               liftIO $ putStrLn $ "End position: " ++ show endPos
-        --           Nothing -> liftIO $ putStrLn "Failed to parse move"
-
-        --       -- Execute the move if the syntax is valid
-        --       newGameState <- if validSyntax
-        --                       then liftIO $ executeMove gs moveInput
-        --                       else return gs
-        --       continue newGameState
-
 -- The app definition
 app :: App GameState e ()
 app =

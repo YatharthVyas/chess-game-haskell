@@ -67,16 +67,6 @@ initialBoard = [generateRow 0 [Just whiteRook, Just whiteKnight, Just whiteBisho
                 generateRow 7 [Just blackRook, Just blackKnight, Just blackBishop, Just blackQueen, Just blackKing, Just blackBishop, Just blackKnight, Just blackRook]
                 ]
 
-initialBoard2 :: Board
-initialBoard2 = [generateRow 0 [Just whiteRook, Just whiteKnight, Just whiteBishop, Just whiteQueen, Just whiteKing, Just whiteBishop, Just whiteKnight, Just whiteRook],
-                generateRow 1 (replicate 8 (Just whitePawn)),
-                generateRow 2 (replicate 8 (Just whitePawn)),
-                generateRow 3 (replicate 8 Nothing),
-                generateRow 4 (replicate 8 Nothing),
-                generateRow 5 (replicate 8 Nothing),
-                generateRow 6 (replicate 8 (Just blackPawn)),
-                generateRow 7 [Just blackRook, Just blackKnight, Just blackBishop, Just blackQueen, Just blackKing, Just blackBishop, Just blackKnight, Just blackRook]
-                ]
 ---------------------------------------------
 ------  Test Data for Piece Movement  -------
 ---------------------------------------------
