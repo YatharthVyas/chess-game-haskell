@@ -1,4 +1,7 @@
 {-# LANGUAGE TemplateHaskell #-}
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+{-# HLINT ignore "Use head" #-}
+{-# HLINT ignore "Redundant if" #-}
 
 module Main where
 import Lens.Micro ((^.))
@@ -20,9 +23,6 @@ import qualified Graphics.Vty as V
  -- Import liftIO
 import Control.Monad.IO.Class (liftIO)
 import Brick (padTopBottom)
-
-data ChessSquare = Empty | Occupied PieceType
-
 
 -- Function to render a chess piece
 
@@ -62,7 +62,7 @@ renderBoard board = vBox $ zipWith (\i row -> hBox $ padCell (str $ show (8 - i)
                   [hBox $ padCell (str "  ") : map (padCell . str . (: [])) ['a' .. 'h']]
 
 initialGameState :: GameState
-initialGameState = GameState initialBoard White ""
+initialGameState = GameState initialBoard White "" ""
 
 safeBack :: [a] -> [a]
 safeBack [] = []
@@ -91,7 +91,11 @@ executeMove gs moveInput =
       if isLegalMove (board gs) startPos endPos then do
         putStrLn "Move executed."
         let newBoard = makeMove (board gs) startPos endPos
-        return gs { board = newBoard, currentPlayer = if currentPlayer gs == White then Black else White, userInput = "" }
+            move = userInput gs
+            lastm = if length move == 4 then
+                (move !! 0) : (move !! 1) : " -> " ++ (move !! 2) : [move !! 3]
+            else ""
+        return gs { board = newBoard, currentPlayer = if currentPlayer gs == White then Black else White, userInput = "", lastMove = lastm}
       else do
         putStrLn "Invalid move. Try again."
         return gs { userInput = "" }
@@ -135,9 +139,15 @@ appEvent (VtyEvent e) = do
             --      Nothing -> liftIO $ putStrLn "Failed to parse move"
             --  Execute the move if the syntax is valid
                     let (Just pc) = getPieceAt (board gs) startPos
-                    newGameState <- if isLegalMove (board gs) startPos endPos && compareColorPlayer (pc ^. pieceColor) (currentPlayer gs)
-                                    then liftIO $ executeMove gs moveInput
-                                    else return gs
+                    newGameState <- if isLegalMove (board gs) startPos endPos
+                                        then if compareColorPlayer (pc ^. pieceColor) (currentPlayer gs)
+                                          then liftIO $ executeMove gs moveInput
+                                        else do
+                                            liftIO $ putStrLn "Not your turn!"
+                                            return gs
+                                    else do
+                                      liftIO $ putStrLn "Invalid Move"
+                                      return gs
                     put newGameState
                     return ()
          _ -> return ()
@@ -149,6 +159,7 @@ app =
             [ vBox [ renderBoard (board gs)
                    , padLeft (Pad 2) (str $ "Current turn: " ++ show (currentPlayer gs))
                    , padLeft (Pad 2) (str "Enter your move: ")
+                   , padLeft (Pad 2) (str $ "Last Move: " ++ show (lastMove gs))
                    , padLeft (Pad 2) (str $ userInput gs)
                    ]
             ]

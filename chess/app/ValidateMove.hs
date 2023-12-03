@@ -49,36 +49,6 @@ parseMove player move
             endFile = fileToIndex (move !! 2)
             endRank = rankToIndex (move !! 3)
         in Just ((startRank, startFile), (endRank, endFile))
-  | length move == 2 && isPawnMove move = do { -- Handle pawn move (e.g., "e4")
-      let startFile = fileToIndex (move !! 0)
-          startRank = rankToIndex (move !! 1)
-          endFile = fileToIndex (move !! 0)  -- The end file is the same as the start file for pawn moves
-          endRank = rankToIndex (move !! 1) + if player == White then 1 else -1 -- Adjust rank for pawn move
-      in Just ((startRank, startFile), (endRank, endFile))
-  }
-  | length move == 3 && isKnightMove move = -- TODO: This is a very imperfect way of parsing knight moves
-      let startFile = fileToIndex (move !! 1) -- b or f
-          startRank = rankToIndex (move !! 2) --
-          {-
-          Knight moves in chess are typically represented by their final position, i.e,
-          Nf3 means the knight moves to f3. However, if there are two knights that can move to f3,
-          then the move is represented as Nbf3, where b is the file of the knight that is moving.
-
-          In our case, currently I am assuming that move is represented as Nb1
-          which means take the knight in b file which is at rank 1 and it always gets moved to c3
-
-          What we can do is always use Nbc3 and then we can parse it as follows:
-          Take the knight at b file, which is at rank 1 and move it to file c and rank 3
-          This will remove ambiguity
-          -}
-          (deltaRank, deltaFile) = case move !! 0 of
-            'N' -> (2, 1)  -- Knight moves have a fixed relative offset
-            _ -> (-2, -1)
-          endFile = startFile + deltaFile
-          endRank = startRank + deltaRank
-          in if isValidBoardPosition (startRank + deltaRank) (startFile + deltaFile)
-              then Just ((startRank, startFile), (startRank + deltaRank, startFile + deltaFile))
-              else Just ((startRank, startFile), (startRank - deltaRank, startFile - deltaFile))
   | otherwise = Nothing
 
 -- Check if the move is a valid pawn move (e.g., "e4")
