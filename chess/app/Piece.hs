@@ -23,12 +23,12 @@ getPieceColor p = p ^. pieceColor
 -----  Piece Movement functions  ------
 ---------------------------------------
 
+-- Verifies if the move is a legal chess move
 canMove :: Piece -> (Int, Int) -> (Int, Int) -> Bool
 -- Pawn can move 1 step forward or 2 steps forward if it is in its initial position
-canMove (Piece c Pawn) (x,y) (x', y') = y == y' &&  direction * (x - x') <= stepSize
+canMove (Piece c Pawn) (x,y) (x', y') = (y == y' && direction * (x - x') <= stepSize) || (abs (y' - y) == 1 && direction * (x - x') == 1)
                                             where stepSize = if (x == 1 && c == white) || (x == 6 && c == black) then 2 else 1
                                                   direction = if c == black then 1 else -1
-                                             -- @TODO: need to check color and subtract if diff color
 canMove (Piece _ Knight) (x,y) (x', y') = (abs (x' - x) == 1 && abs (y' - y) == 2) || (abs (x' - x) == 2 && abs (y' - y) == 1)
 -- Bishop can move diagonally eg: [2,3] to [4,5] , [4,1] and so on
 canMove (Piece _ Bishop) (x,y) (x', y') = abs (x' - x) == abs (y' - y)
@@ -39,7 +39,7 @@ canMove (Piece c Queen) (x,y) (x', y') = canMove (Piece c Rook) (x,y) (x', y') |
 -- King can move 1 step in any direction
 canMove (Piece _ King) (x,y) (x', y') = abs (x' - x) <= 1 && abs (y' - y) <= 1
 
-
+-- Checks if a linear path (horizontal, vertical or diagonal) is clear
 checkLinearPath:: Board -> (Int, Int) -> (Int, Int) -> Dir -> Bool
 checkLinearPath b (x,y) (x', y') DirX = let dir = signum (x' - x)
                                             in all (\x1 -> isNothing (getPieceAt b (x1, y))) [x + dir .. x' - dir]
@@ -49,13 +49,14 @@ checkLinearPath b (x,y) (x', y') DirXY = let dirX = signum (x' - x)
                                              dirY = signum (y' - y)
                                              in all (\(x1, y1) -> isNothing (getPieceAt b (x1, y1))) $ zip [x + dirX .. x' - dirX] [y + dirY .. y' - dirY]
 
-
 pathClear :: Piece -> Board -> (Int, Int) -> (Int, Int) -> Bool
-pathClear (Piece _ Pawn) b (x,y) (x', y') = checkLinearPath b (x,y) (x', y') DirX
+pathClear (Piece c Pawn) b start@(x,y) end@(x', y') = x /= x'                   -- attack move (diagonal)
+                                                      || checkLinearPath b start end DirX -- move forward
 pathClear (Piece _ Knight) b (x,y) (x', y') = True -- knight can jump
-pathClear (Piece _ Bishop) b (x,y) (x', y') = checkLinearPath b (x,y) (x', y') DirXY
-pathClear (Piece _ Rook) b (x,y) (x', y') = checkLinearPath b (x,y) (x', y') d where d = if x == x' then DirY else DirX
-pathClear (Piece c Queen) b (x,y) (x', y') = pathClear (Piece c Rook) b (x,y) (x', y') || pathClear (Piece c Bishop) b (x,y) (x', y')
+pathClear (Piece _ Bishop) b (x,y) (x', y') = checkLinearPath b (x,y) (x', y') DirXY -- use signum and define XY'
+pathClear (Piece _ Rook) b (x,y) (x', y') = checkLinearPath b (min x x', min y y') (max x x', max y y') d where d = if x == x' then DirY else DirX
+pathClear (Piece c Queen) b (x,y) (x', y') = if x == x' || y == y' then pathClear (Piece c Rook) b (x,y) (x', y')
+                                                else  pathClear (Piece c Bishop) b (x,y) (x', y')
 pathClear (Piece _ King) b (x,y) (x', y') = True -- king can move 1 step in any direction
 
 
@@ -89,6 +90,9 @@ isLegalMove b initial@(x,y) final@(x', y') = case getPieceAt b (x,y) of
 -- >>> isLegalMove initialBoard (6,1) (4,1)
 -- True
 
+-- >>> isLegalMove initialBoard (6,1) (5,1)
+-- True
+
 -- moving pawn 3 steps forward
 -- >>> isLegalMove initialBoard (1,1) (4,1)
 -- False
@@ -106,4 +110,19 @@ isLegalMove b initial@(x,y) final@(x', y') = case getPieceAt b (x,y) of
 -- False
 
 -- >>> isLegalMove initialBoard (0,1) (1,3)
+-- False
+
+-- >>> getPieceAt initialBoardWithoutPawn (0,3)
+-- Just (Piece {_pieceColor = ISOColor 7, _pieceType = Queen})
+
+-- >>> isLegalMove initialBoardWithoutPawn (0,3) (3,6)
+-- True
+
+-- >>> isLegalMove initialBoardWithoutPawn (0,3) (3,0)
+-- True
+
+-- >>> isLegalMove initialBoardWithoutPawn (0,3) (3,3)
+-- True
+
+-- >>> isLegalMove initialBoardWithoutPawn (0,3) (3,4)
 -- False

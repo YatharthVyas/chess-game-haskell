@@ -55,7 +55,7 @@ generateRow y [p1, p2, p3, p4, p5, p6, p7, p8] = [
                                                     c1 = if y `mod` 2 == 1 then white else black
                                                     c2 = if y `mod` 2 == 1 then black else white
 
--- generate the initial layout of a chess board
+-- initial layout of a chess board
 initialBoard :: Board
 initialBoard = [generateRow 0 [Just whiteRook, Just whiteKnight, Just whiteBishop, Just whiteQueen, Just whiteKing, Just whiteBishop, Just whiteKnight, Just whiteRook],
                 generateRow 1 (replicate 8 (Just whitePawn)),
@@ -64,6 +64,19 @@ initialBoard = [generateRow 0 [Just whiteRook, Just whiteKnight, Just whiteBisho
                 generateRow 4 (replicate 8 Nothing),
                 generateRow 5 (replicate 8 Nothing),
                 generateRow 6 (replicate 8 (Just blackPawn)),
+                generateRow 7 [Just blackRook, Just blackKnight, Just blackBishop, Just blackQueen, Just blackKing, Just blackBishop, Just blackKnight, Just blackRook]
+                ]
+
+
+-- initial layout of a chess board without pawns for testing
+initialBoardWithoutPawn :: Board
+initialBoardWithoutPawn = [generateRow 0 [Just whiteRook, Just whiteKnight, Just whiteBishop, Just whiteQueen, Just whiteKing, Just whiteBishop, Just whiteKnight, Just whiteRook],
+                generateRow 1 (replicate 8 Nothing),
+                generateRow 2 (replicate 8 Nothing),
+                generateRow 3 (replicate 8 Nothing),
+                generateRow 4 (replicate 8 Nothing),
+                generateRow 5 (replicate 8 Nothing),
+                generateRow 6 (replicate 8 Nothing),
                 generateRow 7 [Just blackRook, Just blackKnight, Just blackBishop, Just blackQueen, Just blackKing, Just blackBishop, Just blackKnight, Just blackRook]
                 ]
 
