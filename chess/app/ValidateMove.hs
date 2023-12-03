@@ -12,25 +12,25 @@ Disambiguating moves where two (or more) identical pieces can move to the same s
 Special moves like castling (O-O for kingside and O-O-O for queenside).
 Check (+) and checkmate (#) symbols.
 -}
-isValidChessMove :: String -> Bool
-isValidChessMove move
-  | move `elem` ["O-O", "O-O-O"] = True  -- Castling
-  | otherwise = case removeCheckCheckmate move of
-      [file, rank] -> isFile file && isRank rank  -- Single-step pawn move
-      [file1, rank1, file2, rank2] -> isFile file1 && isRank rank1 && isFile file2 && isRank rank2 && file1 == file2 && isPawnDoubleStep rank1 rank2  -- Double-step pawn move
-      [piece, file, rank] -> isPiece piece && isFile file && isRank rank
-      [file1, 'x', file2, rank] -> isFile file1 && isFile file2 && isRank rank  -- Pawn capture
-      [piece, file, 'x', file2, rank] -> isPiece piece && isFile file && isFile file2 && isRank rank
-      [piece, file1, rank1, file2, rank2] -> isPiece piece && isFile file1 && isRank rank1 && isFile file2 && isRank rank2  -- Disambiguating move
-      [file, rank, '=', promPiece] -> isFile file && isRank rank && isPromotionPiece promPiece  -- Pawn promotion
-      _ -> False
-  where
-    removeCheckCheckmate s = filter (`notElem` ['+', '#']) s
-    isFile f = f `elem` ['a'..'h']
-    isRank r = r `elem` ['1'..'8']
-    isPiece p = isUpper p && p `elem` "KQRBN"
-    isPromotionPiece p = p `elem` "QRBN"
-    isPawnDoubleStep r1 r2 = (r1 == '2' && r2 == '4') || (r1 == '7' && r2 == '5')
+-- isValidChessMove :: String -> Bool
+-- isValidChessMove move
+--   | move `elem` ["O-O", "O-O-O"] = True  -- Castling
+--   | otherwise = case removeCheckCheckmate move of
+--       [file, rank] -> isFile file && isRank rank  -- Single-step pawn move
+--       [file1, rank1, file2, rank2] -> isFile file1 && isRank rank1 && isFile file2 && isRank rank2 && file1 == file2 && isPawnDoubleStep rank1 rank2  -- Double-step pawn move
+--       [piece, file, rank] -> isPiece piece && isFile file && isRank rank
+--       [file1, 'x', file2, rank] -> isFile file1 && isFile file2 && isRank rank  -- Pawn capture
+--       [piece, file, 'x', file2, rank] -> isPiece piece && isFile file && isFile file2 && isRank rank
+--       [piece, file1, rank1, file2, rank2] -> isPiece piece && isFile file1 && isRank rank1 && isFile file2 && isRank rank2  -- Disambiguating move
+--       [file, rank, '=', promPiece] -> isFile file && isRank rank && isPromotionPiece promPiece  -- Pawn promotion
+--       _ -> False
+--   where
+--     removeCheckCheckmate s = filter (`notElem` ['+', '#']) s
+--     isFile f = f `elem` ['a'..'h']
+--     isRank r = r `elem` ['1'..'8']
+--     isPiece p = isUpper p && p `elem` "KQRBN"
+--     isPromotionPiece p = p `elem` "QRBN"
+--     isPawnDoubleStep r1 r2 = (r1 == '2' && r2 == '4') || (r1 == '7' && r2 == '5')
 
 
 -- Now that a move is valid, we need to write functions which take the Gamestate and the move and update the board if the move is valid
@@ -44,7 +44,7 @@ rankToIndex rank = fromEnum rank - fromEnum '1'  -- Subtract from 8 for zero-ind
 parseMove :: Player -> String -> Maybe ((Int, Int), (Int, Int))
 parseMove player move
   | length move == 4 =
-        let startFile = fileToIndex (move !! 0)
+        let startFile = fileToIndex (move !! 0) -- move[0] = converts e to 4
             startRank = rankToIndex (move !! 1)
             endFile = fileToIndex (move !! 2)
             endRank = rankToIndex (move !! 3)

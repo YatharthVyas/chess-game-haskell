@@ -3,7 +3,7 @@
 module Main where
 import Lens.Micro ((^.))
 import Types
-import ValidateMove (isValidChessMove, parseMove)
+import ValidateMove (parseMove)
 import Piece (isLegalMove, getPieceAt, canMove, pathClear)
 import TestData
 import Data.Char (isDigit, isUpper)
@@ -99,6 +99,12 @@ executeMove gs moveInput =
       putStrLn "Invalid move format."
       return gs { userInput = "" }
 
+compareColorPlayer :: V.Color -> Player -> Bool
+compareColorPlayer c p
+  | c == V.black && p == Black = True
+  | c == V.white && p == White = True
+  | otherwise = False
+
 appEvent :: BrickEvent () e -> EventM () GameState ()
 appEvent (VtyEvent e) = do
     gs <- get
@@ -117,21 +123,23 @@ appEvent (VtyEvent e) = do
          V.EvKey V.KEnter [] -> do
              -- Check if the move syntax is valid
              let moveInput = userInput gs
-             let validSyntax = isValidChessMove moveInput
 
-             -- the below lines are messing up the alignment of chessboard
+            --  let validSyntax = isValidChessMove moveInput
+
+            --  -- the below lines are messing up the alignment of chessboard
             --  liftIO $ putStrLn $ if validSyntax then "Valid move syntax" else "Invalid move syntax"
-            --  case parseMove (currentPlayer gs) moveInput of
-            --      Just (startPos, endPos) -> do
+             case parseMove (currentPlayer gs) moveInput of
+                 Just (startPos, endPos) -> do
             --          liftIO $ putStrLn $ "Start position: " ++ show startPos
             --          liftIO $ putStrLn $ "End position: " ++ show endPos
             --      Nothing -> liftIO $ putStrLn "Failed to parse move"
             --  Execute the move if the syntax is valid
-             newGameState <- if validSyntax
-                             then liftIO $ executeMove gs moveInput
-                             else return gs
-             put newGameState
-             return ()
+                    let (Just pc) = getPieceAt (board gs) startPos
+                    newGameState <- if isLegalMove (board gs) startPos endPos && compareColorPlayer (pc ^. pieceColor) (currentPlayer gs)
+                                    then liftIO $ executeMove gs moveInput
+                                    else return gs
+                    put newGameState
+                    return ()
          _ -> return ()
 appEvent _ = return ()
 

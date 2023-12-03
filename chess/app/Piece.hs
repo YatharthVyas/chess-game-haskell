@@ -126,3 +126,10 @@ isLegalMove b initial@(x,y) final@(x', y') = case getPieceAt b (x,y) of
 
 -- >>> isLegalMove initialBoardWithoutPawn (0,3) (3,4)
 -- False
+
+-- >>> getPieceAt initialBoard (1,4)
+-- Just (Piece {_pieceColor = ISOColor 7, _pieceType = Pawn})
+
+-- >>> isLegalMove initialBoard (1,4) (2,4)
+-- True
+--
