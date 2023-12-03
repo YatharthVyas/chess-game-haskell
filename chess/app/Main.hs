@@ -19,6 +19,7 @@ import Data.Monoid ((<>))
 import qualified Graphics.Vty as V
  -- Import liftIO
 import Control.Monad.IO.Class (liftIO)
+import Brick (padTopBottom)
 
 data ChessSquare = Empty | Occupied PieceType
 
@@ -28,19 +29,22 @@ data ChessSquare = Empty | Occupied PieceType
 renderPieceText :: String -> String -> String -> String
 renderPieceText pColor blackText whiteText = if pColor == "blackPiece" then blackText else whiteText
 
+padCell :: Widget n -> Widget n
+padCell = padLeft (Pad 2) . padRight (Pad 3) . padTopBottom 1
+
 renderPiece :: Maybe Piece -> V.Color -> Widget n
 renderPiece piece c = case piece of
   Just a -> let colorAttr = if c == V.black then "blackCell" else "whiteCell"
                 pColor = if a ^. pieceColor == V.black then "blackPiece" else "whitePiece"
-              in  withAttr (attrName $ pColor ++ colorAttr) $ str $ case a ^. pieceType of
-                  King   -> renderPieceText pColor " ♚ " " ♔ "
-                  Queen  -> renderPieceText pColor " ♛ " " ♕ "
-                  Rook   -> renderPieceText pColor " ♜ " " ♖ "
-                  Pawn   -> renderPieceText pColor " ♟ " " ♙ "
-                  Bishop -> renderPieceText pColor " ♝ " " ♗ "
-                  Knight -> renderPieceText pColor " ♞ " " ♘ "
+              in  withAttr (attrName $ pColor ++ colorAttr) $ padCell $ str $ case a ^. pieceType of
+                  King   -> renderPieceText pColor "♚" "♔"
+                  Queen  -> renderPieceText pColor "♛" "♕"
+                  Rook   -> renderPieceText pColor "♜" "♖"
+                  Pawn   -> renderPieceText pColor "♟" "♙"
+                  Bishop -> renderPieceText pColor "♝" "♗"
+                  Knight -> renderPieceText pColor "♞" "♘"
   Nothing -> let colorAttr = if c == V.black then "blackSquare" else "lightSquare"
-              in withAttr (attrName colorAttr) $ str "   "
+              in withAttr (attrName colorAttr) $ padCell $ str " "
 
 
 
@@ -53,8 +57,9 @@ renderSquare cell = case cell ^. cellPiece of
 
 -- Function to render a chess board
 renderBoard :: Board -> Widget n
-renderBoard board =
-  vBox $ map (hBox . map renderSquare) board
+renderBoard board = vBox $ zipWith (\i row -> hBox $ padCell (str $ show (8 - i)) :
+                  map renderSquare row) [0 .. ] (reverse board) ++
+                  [hBox $ padCell (str "  ") : map (padCell . str . (: [])) ['a' .. 'h']]
 
 initialGameState :: GameState
 initialGameState = GameState initialBoard White ""
@@ -102,12 +107,12 @@ appEvent (VtyEvent e) = do
          V.EvKey V.KEsc [] -> halt
          V.EvKey (V.KChar c) [] -> do
              let newInput = userInput gs ++ [c]
-             put(gs { userInput = newInput })
+             put (gs { userInput = newInput })
              return ()
          -- backspace
          V.EvKey V.KBS [] -> do
              let newInput = safeBack (userInput gs)
-             put(gs { userInput = newInput })
+             put (gs { userInput = newInput })
              return ()
          V.EvKey V.KEnter [] -> do
              -- Check if the move syntax is valid
@@ -126,7 +131,7 @@ appEvent (VtyEvent e) = do
                              then liftIO $ executeMove gs moveInput
                              else return gs
              put newGameState
-             return()
+             return ()
          _ -> return ()
 appEvent _ = return ()
 
