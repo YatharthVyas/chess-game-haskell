@@ -62,7 +62,7 @@ renderBoard board = vBox $ zipWith (\i row -> hBox $ padCell (str $ show (8 - i)
                   [hBox $ padCell (str "  ") : map (padCell . str . (: [])) ['a' .. 'h']]
 
 initialGameState :: GameState
-initialGameState = GameState initialBoard White "" ""
+initialGameState = GameState initialBoard White "" "" ""
 
 safeBack :: [a] -> [a]
 safeBack [] = []
@@ -89,19 +89,16 @@ executeMove gs moveInput =
   case parseMove (currentPlayer gs) moveInput of
     Just (startPos, endPos) ->
       if isLegalMove (board gs) startPos endPos then do
-        putStrLn "Move executed."
         let newBoard = makeMove (board gs) startPos endPos
             move = userInput gs
             lastm = if length move == 4 then
                 (move !! 0) : (move !! 1) : " -> " ++ (move !! 2) : [move !! 3]
             else ""
-        return gs { board = newBoard, currentPlayer = if currentPlayer gs == White then Black else White, userInput = "", lastMove = lastm}
+        return gs { board = newBoard, currentPlayer = if currentPlayer gs == White then Black else White, userInput = "", lastMove = lastm, errorMsg = "Move executed."}
       else do
-        putStrLn "Invalid move. Try again."
-        return gs { userInput = "" }
-    Nothing -> do
-      putStrLn "Invalid move format."
-      return gs { userInput = "" }
+        return gs { userInput = "", errorMsg="Invalid move. Try again." }
+    Nothing -> do 
+      return gs { userInput = "", errorMsg="Invalid move format." }
 
 compareColorPlayer :: V.Color -> Player -> Bool
 compareColorPlayer c p
@@ -132,6 +129,7 @@ appEvent (VtyEvent e) = do
             --  -- the below lines are messing up the alignment of chessboard
             --  liftIO $ putStrLn $ if validSyntax then "Valid move syntax" else "Invalid move syntax"
              case parseMove (currentPlayer gs) moveInput of
+                 Nothing -> put (gs { errorMsg = "Failed to parse move" })
                  Just (startPos, endPos) -> do
             --          liftIO $ putStrLn $ "Start position: " ++ show startPos
             --          liftIO $ putStrLn $ "End position: " ++ show endPos
@@ -142,11 +140,9 @@ appEvent (VtyEvent e) = do
                                         then if compareColorPlayer (pc ^. pieceColor) (currentPlayer gs)
                                           then liftIO $ executeMove gs moveInput
                                         else do
-                                            liftIO $ putStrLn "Not your turn!"
-                                            return gs
+                                            return gs { errorMsg = "Not your turn!" }
                                     else do
-                                      liftIO $ putStrLn "Invalid Move"
-                                      return gs
+                                      return gs { errorMsg = "Invalid Move" }
                     put newGameState
                     return ()
          _ -> return ()
@@ -177,8 +173,9 @@ app =
                    , borderBottom
                    , hBox [vCenter $ hCenter $ renderBoard (board gs), borderLeft $ vBox [ padTopBottom 2 gameInstructions
                     ,  borderBottom, padTop (Pad 2) $ padLeft (Pad 2) $ vBox [ (str $ "Current turn: " ++ show (currentPlayer gs))
-                        , str "Enter your move: "
                         , str $ "Last Move: " ++ show (lastMove gs)
+                        , str $ "Log: " ++ show (errorMsg gs)
+                        , str "Enter your move: "
                         , str $ userInput gs
                       ]
                    ]

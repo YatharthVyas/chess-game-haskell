@@ -40,15 +40,21 @@ fileToIndex file = fromEnum file - fromEnum 'a'
 rankToIndex ::  Char -> Int
 rankToIndex rank = fromEnum rank - fromEnum '1'  -- Subtract from 8 for zero-indexing
 
--- Parses a move string (e.g., "e2e4", "e4", "Nf3") into start and end board indices
+-- Parses a move string (e.g., "e2e4") into start and end board indices
 parseMove :: Player -> String -> Maybe ((Int, Int), (Int, Int))
 parseMove player move
   | length move == 4 =
         let startFile = fileToIndex (move !! 0) -- move[0] = converts e to 4
             startRank = rankToIndex (move !! 1)
             endFile = fileToIndex (move !! 2)
-            endRank = rankToIndex (move !! 3)
-        in Just ((startRank, startFile), (endRank, endFile))
+            endRank = rankToIndex (move !! 3) 
+        in if  (startRank <= 7 && startRank >= 0) &&
+               (endRank <= 7 && endRank >= 0) &&
+               (startFile <= 7 && startFile >= 0) &&
+               (endFile <= 7 && endFile >= 0)
+              then Just ((startRank, startFile), (endRank, endFile))
+            else Nothing
+
   | otherwise = Nothing
 
 -- Check if the move is a valid pawn move (e.g., "e4")
