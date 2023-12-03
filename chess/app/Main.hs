@@ -22,7 +22,7 @@ import Data.Monoid ((<>))
 import qualified Graphics.Vty as V
  -- Import liftIO
 import Control.Monad.IO.Class (liftIO)
-import Brick (padTopBottom)
+import Brick (padTopBottom, padBottom, padTop)
 
 -- Function to render a chess piece
 
@@ -113,7 +113,6 @@ appEvent :: BrickEvent () e -> EventM () GameState ()
 appEvent (VtyEvent e) = do
     gs <- get
     case e of
-         V.EvKey (V.KChar 'q') [] -> halt
          V.EvKey V.KEsc [] -> halt
          V.EvKey (V.KChar c) [] -> do
              let newInput = userInput gs ++ [c]
@@ -153,15 +152,38 @@ appEvent (VtyEvent e) = do
          _ -> return ()
 appEvent _ = return ()
 
+
+gameTitle :: Widget n
+gameTitle = padBottom (Pad 1) $ hCenter $ str "Press Esc to quit"
+
+gameBigHeader :: Widget n
+gameBigHeader = padTop (Pad 1) $ hCenter $ str " ██████╗██╗  ██╗███████╗███████╗███████╗\n██╔════╝██║  ██║██╔════╝██╔════╝██╔════╝\n██║     ███████║█████╗  ███████╗███████╗\n██║     ██╔══██║██╔══╝  ╚════██║╚════██║\n╚██████╗██║  ██║███████╗███████║███████║\n ╚═════╝╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝"
+
+gameInstructions :: Widget n
+gameInstructions = padLeft (Pad 3) $ hCenter $ str "Welcome to Chess Game!\nEnter a move in the format: e2e4 \nPress Enter to execute the move\nPress Esc to quit"
+
+borderBottom :: Widget n
+borderBottom = (<+> hBorder) $ str " "
+
+borderLeft :: Widget n -> Widget n
+borderLeft = (vBorder <+>)
+
 app :: App GameState e ()
 app =
   App {appDraw = \gs ->
-            [ vBox [ renderBoard (board gs)
-                   , padLeft (Pad 2) (str $ "Current turn: " ++ show (currentPlayer gs))
-                   , padLeft (Pad 2) (str "Enter your move: ")
-                   , padLeft (Pad 2) (str $ "Last Move: " ++ show (lastMove gs))
-                   , padLeft (Pad 2) (str $ userInput gs)
+            [ withBorderStyle unicodeRounded $ border $ vBox
+                  [ gameBigHeader
+                   , gameTitle
+                   , borderBottom
+                   , hBox [vCenter $ hCenter $ renderBoard (board gs), borderLeft $ vBox [ padTopBottom 2 gameInstructions
+                    ,  borderBottom, padTop (Pad 2) $ padLeft (Pad 2) $ vBox [ (str $ "Current turn: " ++ show (currentPlayer gs))
+                        , str "Enter your move: "
+                        , str $ "Last Move: " ++ show (lastMove gs)
+                        , str $ userInput gs
+                      ]
                    ]
+                ]
+              ]
             ]
       , appChooseCursor = showFirstCursor
       , appHandleEvent = appEvent
