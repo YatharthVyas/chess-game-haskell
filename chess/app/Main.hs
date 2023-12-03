@@ -1,4 +1,3 @@
-{-# LANGUAGE TemplateHaskell #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 {-# HLINT ignore "Use head" #-}
 {-# HLINT ignore "Redundant if" #-}
@@ -114,32 +113,11 @@ appEvent _ = return ()
 
 app :: App GameState e ()
 app =
-  App {appDraw = \gs ->
-            [ withBorderStyle unicodeRounded $ border $ vBox
-                  [ gameBigHeader
-                   , gameTitle
-                   , borderBottom
-                   , hBox [vCenter $ hCenter $ renderBoard (board gs), borderLeft $ vBox [ padTopBottom 2 gameInstructions
-                    ,  borderBottom, padTop (Pad 2) $ padLeft (Pad 2) $ vBox [ (str $ "Current turn: " ++ show (currentPlayer gs))
-                        , str $ "Last Move: " ++ show (lastMove gs)
-                        , str $ "Log: " ++ show (errorMsg gs)
-                        , str "Enter your move: "
-                        , str $ userInput gs
-                      ]
-                   ]
-                ]
-              ]
-            ]
+  App {appDraw = drawUI
       , appChooseCursor = showFirstCursor
       , appHandleEvent = appEvent
       , appStartEvent = return ()
-      , appAttrMap = const $ attrMap V.defAttr [ (attrName "blackPiecewhiteCell", V.black `on` V.rgbColor 227 193 111),
-                                                  (attrName "whitePiecewhiteCell", V.white `on` V.rgbColor 227 193 111),
-                                                  (attrName "blackPieceblackCell", V.black `on` V.rgbColor 184 139 74),
-                                                  (attrName "whitePieceblackCell", V.white `on` V.rgbColor 184 139 74),
-                                                  (attrName "lightSquare", V.rgbColor 220 220 220 `on` V.rgbColor 227 193 111),
-                                                  (attrName "blackSquare", V.rgbColor 220 220 220 `on` V.rgbColor 184 139 74)
-                                                ]
+      , appAttrMap = attributeMap
       }
 
 

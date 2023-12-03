@@ -60,3 +60,29 @@ renderBoard :: Board -> Widget n
 renderBoard board = vBox $ zipWith (\i row -> hBox $ padCell (str $ show (8 - i)) :
                   map renderSquare row) [0 .. ] (reverse board) ++
                   [hBox $ padCell (str "  ") : map (padCell . str . (: [])) ['a' .. 'h']]
+
+
+attributeMap = const $ attrMap V.defAttr [ (attrName "blackPiecewhiteCell", V.black `on` V.rgbColor 227 193 111),
+                                                  (attrName "whitePiecewhiteCell", V.white `on` V.rgbColor 227 193 111),
+                                                  (attrName "blackPieceblackCell", V.black `on` V.rgbColor 184 139 74),
+                                                  (attrName "whitePieceblackCell", V.white `on` V.rgbColor 184 139 74),
+                                                  (attrName "lightSquare", V.rgbColor 220 220 220 `on` V.rgbColor 227 193 111),
+                                                  (attrName "blackSquare", V.rgbColor 220 220 220 `on` V.rgbColor 184 139 74)
+                                                ]
+
+drawUI :: GameState -> [Widget ()]
+drawUI gs = [ withBorderStyle unicodeRounded $ border $ vBox
+                  [ gameBigHeader
+                   , gameTitle
+                   , borderBottom
+                   , hBox [vCenter $ hCenter $ renderBoard (board gs), borderLeft $ vBox [ padTopBottom 2 gameInstructions
+                    ,  borderBottom, padTop (Pad 2) $ padLeft (Pad 2) $ vBox [ (str $ "Current turn: " ++ show (currentPlayer gs))
+                        , str $ "Last Move: " ++ show (lastMove gs)
+                        , str $ "Log: " ++ show (errorMsg gs)
+                        , str "Enter your move: "
+                        , str $ userInput gs
+                      ]
+                   ]
+                ]
+              ]
+            ]
