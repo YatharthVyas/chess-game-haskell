@@ -5,8 +5,8 @@
 module Main where
 import Lens.Micro ((^.))
 import Types
-import ValidateMove (parseMove)
-import Piece (isLegalMove, getPieceAt, canMove, pathClear)
+import ValidateMove (parseMove, fileToIndex, rankToIndex)
+import Piece (isLegalMove, getPieceAt, canMove, pathClear, getBoardPieceColor)
 import TestData
 import Data.Char (isDigit, isUpper)
 {-# LANGUAGE OverloadedStrings #-}
@@ -37,14 +37,16 @@ makeMove board (startRank, startFile) (endRank, endFile) =
   -- This will ensure that the color of the cell is not changed when we move a piece
     let startCell = (board !! startRank) !! startFile
         endCell = (board !! endRank) !! endFile
+        startCellColor = _cellColor startCell
+        endCellColor = _cellColor endCell
         -- We want the updated position to have the piece from the start position and the color from the end position
-        newStartCell = Cell (_cellColor endCell) (_cellPiece startCell)
-        emptyCell = Cell (_cellColor startCell) Nothing  -- Create an empty cell with the same color
+        newStartCell = Cell endCellColor (_cellPiece startCell) endCellColor
+        emptyCell = Cell startCellColor Nothing startCellColor   -- Create an empty cell with the same color
         updatedRowStart = take startFile (board !! startRank) ++ [emptyCell] ++ drop (startFile + 1) (board !! startRank)
         updatedBoardStart = take startRank board ++ [updatedRowStart] ++ drop (startRank + 1) board
         updatedRowEnd = take endFile (updatedBoardStart !! endRank) ++ [newStartCell] ++ drop (endFile + 1) (updatedBoardStart !! endRank)
         updatedBoardEnd = take endRank updatedBoardStart ++ [updatedRowEnd] ++ drop (endRank + 1) updatedBoardStart
-    in updatedBoardEnd
+    in resetHighlightedBoard updatedBoardEnd
 
 executeMove :: GameState -> String -> IO GameState
 executeMove gs moveInput =
@@ -75,12 +77,26 @@ appEvent (VtyEvent e) = do
          V.EvKey V.KEsc [] -> halt
          V.EvKey (V.KChar c) [] -> do
              let newInput = userInput gs ++ [c]
-             put (gs { userInput = newInput })
-             return ()
+             let parsedInput = if length newInput > 1 &&
+                      compareColorPlayer (getBoardPieceColor (board gs) (rankToIndex $ newInput !! 1, fileToIndex $ newInput !! 0)) (currentPlayer gs)
+                  then Just (fileToIndex $ newInput !! 0, rankToIndex $ newInput !! 1)
+                  else Nothing
+             case parsedInput of
+                  Just (startFile, startRank) -> do
+                      let possibleMoves = [(endRank, endFile) | endRank <- [0..7], endFile <- [0..7], isLegalMove (board gs) (startRank, startFile) (endRank, endFile)]
+                      let highlightedBoard = highlightPossibleMoves (board gs) possibleMoves
+                      put (gs { userInput = newInput, board = highlightedBoard })
+                      return ()
+                  Nothing -> do
+                      put (gs { userInput = newInput })
+                      return ()
          -- backspace
          V.EvKey V.KBS [] -> do
              let newInput = safeBack (userInput gs)
-             put (gs { userInput = newInput })
+             if length newInput < 2 then do
+                  put (gs { userInput = newInput, board = resetHighlightedBoard (board gs) })
+              else do
+                put (gs { userInput = newInput })
              return ()
          V.EvKey V.KEnter [] -> do
              -- Check if the move syntax is valid

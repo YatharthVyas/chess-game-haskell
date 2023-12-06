@@ -9,14 +9,20 @@ import Lens.Micro
 import Lens.Micro.TH (makeLenses)
 
 -- data PlayerColor = Black | White
-data Cell = Cell { _cellColor :: Color, _cellPiece :: Maybe Piece } deriving (Show)
+data Cell = Cell { _cellColor :: Color, _cellPiece :: Maybe Piece, _borderColor :: Color } deriving (Show)
 data Piece = Piece { _pieceColor :: Color, _pieceType :: PieceType } deriving (Eq, Show)
 data PieceType = Pawn | Knight | Bishop | Rook | Queen | King deriving (Eq, Show)
 data Dir = DirX | DirY | DirXY  -- used to indicate the direction of movement
 
 type Board = [[Cell]]
 data Player = White | Black deriving (Show, Eq)
-data GameState = GameState { board :: Board, currentPlayer :: Player, userInput :: String, lastMove :: String, errorMsg :: String } deriving (Show)
+data GameState = GameState {
+    board :: Board,
+    currentPlayer :: Player,
+    userInput :: String,
+    lastMove :: String,
+    errorMsg :: String
+  } deriving (Show)
 makeLenses ''GameState
 makeLenses ''Cell
 makeLenses ''Piece

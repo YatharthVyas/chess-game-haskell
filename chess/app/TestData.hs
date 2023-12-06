@@ -42,14 +42,14 @@ whiteKing = Piece white King
 -- generate a row of cells
 generateRow :: Int -> [Maybe Piece] -> [Cell]
 generateRow y [p1, p2, p3, p4, p5, p6, p7, p8] = [
-                                                    Cell c1 p1,
-                                                    Cell c2 p2,
-                                                    Cell c1 p3,
-                                                    Cell c2 p4,
-                                                    Cell c1 p5,
-                                                    Cell c2 p6,
-                                                    Cell c1 p7,
-                                                    Cell c2 p8
+                                                    Cell c1 p1 c1,
+                                                    Cell c2 p2 c2,
+                                                    Cell c1 p3 c1,
+                                                    Cell c2 p4 c2,
+                                                    Cell c1 p5 c1,
+                                                    Cell c2 p6 c2,
+                                                    Cell c1 p7 c1,
+                                                    Cell c2 p8 c2
                                                 ]
                                                 where
                                                     c1 = if y `mod` 2 == 1 then white else black

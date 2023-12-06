@@ -35,19 +35,19 @@ Check (+) and checkmate (#) symbols.
 
 -- Now that a move is valid, we need to write functions which take the Gamestate and the move and update the board if the move is valid
 fileToIndex :: Char -> Int
-fileToIndex file = fromEnum file - fromEnum 'a'
+fileToIndex file = if file >= 'a' && file <= 'h' then fromEnum file - fromEnum 'a' else error "Invalid file" -- @TODO: Handle this error
 
 rankToIndex ::  Char -> Int
-rankToIndex rank = fromEnum rank - fromEnum '1'  -- Subtract from 8 for zero-indexing
+rankToIndex rank = if rank >= '1' && rank <= '8' then fromEnum rank - fromEnum '1' else error "Invalid rank"  -- Subtract from 8 for zero-indexing
 
 -- Parses a move string (e.g., "e2e4") into start and end board indices
 parseMove :: Player -> String -> Maybe ((Int, Int), (Int, Int))
 parseMove player move
   | length move == 4 =
-        let startFile = fileToIndex (move !! 0) -- move[0] = converts e to 4
+        let startFile = fileToIndex (head move) -- move[0] = converts e to 4
             startRank = rankToIndex (move !! 1)
             endFile = fileToIndex (move !! 2)
-            endRank = rankToIndex (move !! 3) 
+            endRank = rankToIndex (move !! 3)
         in if  (startRank <= 7 && startRank >= 0) &&
                (endRank <= 7 && endRank >= 0) &&
                (startFile <= 7 && startFile >= 0) &&
