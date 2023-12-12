@@ -5,6 +5,10 @@
 module Main where
 import Lens.Micro ((^.))
 import Types
+import Server (createServer, isPortAvailable)
+import Client (connectToServer)
+import qualified Data.ByteString.Char8 as C
+import Control.Concurrent (forkIO)
 import ValidateMove (parseMove, fileToIndex, rankToIndex)
 import Piece (isLegalMove, getPieceAt, canMove, pathClear, getBoardPieceColor)
 import TestData
@@ -22,6 +26,22 @@ import qualified Graphics.Vty as V
  -- Import liftIO
 import Control.Monad.IO.Class (liftIO)
 import UI
+
+{-
+1. We can probably run it such that it checks if the socket 8080 is being used or not, if it isnt then the terminal which checked it becomes the host and will be white. It will create a socket which will accept connections at port 8080
+
+2. On the other hand, when the second terminal sees that socket 8080 is already bound, then it will send a connection request to that socket and connect to it and will take the color as black
+
+3. As soon as the first terminal receives the request, the game will start and chessboard shows up on both terminals
+
+This point onwards i think we can try and disable the terminal of the player after they have played their move until they receive a move from the other player. Since the move gets validated before its sent, we can call makeMove on the receiver and enable the terminal again
+
+-}
+
+-- We need to set a flag which checks with the gameboard later on to see if we should disable the terminal or not
+-- We can do this by using a variable which compares with the one in Gamestate and if it is different, then we can disable the terminal
+myPlayer :: Player
+myPlayer = White
 
 initialGameState :: GameState
 initialGameState = GameState initialBoard White "" "" ""
@@ -73,57 +93,65 @@ compareColorPlayer c p
 appEvent :: BrickEvent () e -> EventM () GameState ()
 appEvent (VtyEvent e) = do
     gs <- get
-    case e of
-         V.EvKey V.KEsc [] -> halt
-         V.EvKey (V.KChar c) [] -> do
-             let newInput = userInput gs ++ [c]
-             let parsedInput = if length newInput > 1 &&
-                      compareColorPlayer (getBoardPieceColor (board gs) (rankToIndex $ newInput !! 1, fileToIndex $ newInput !! 0)) (currentPlayer gs)
-                  then Just (fileToIndex $ newInput !! 0, rankToIndex $ newInput !! 1)
-                  else Nothing
-             case parsedInput of
-                  Just (startFile, startRank) -> do
-                      let possibleMoves = [(endRank, endFile) | endRank <- [0..7], endFile <- [0..7], isLegalMove (board gs) (startRank, startFile) (endRank, endFile)]
-                      let highlightedBoard = highlightPossibleMoves (board gs) possibleMoves
-                      put (gs { userInput = newInput, board = highlightedBoard })
-                      return ()
-                  Nothing -> do
-                      put (gs { userInput = newInput })
-                      return ()
-         -- backspace
-         V.EvKey V.KBS [] -> do
-             let newInput = safeBack (userInput gs)
-             if length newInput < 2 then do
-                  put (gs { userInput = newInput, board = resetHighlightedBoard (board gs) })
-              else do
-                put (gs { userInput = newInput })
-             return ()
-         V.EvKey V.KEnter [] -> do
-             -- Check if the move syntax is valid
-             let moveInput = userInput gs
+    if myPlayer != currentPlayer gs then do
+        -- Wait for the verified input from the other player and then call makeMove on the board once we receive the input
+        msg <- recv conn 1024
+        newGameState <- liftIO $ executeMove gs (C.unpack msg)
+        put newGameState
+        return ()
 
-            --  let validSyntax = isValidChessMove moveInput
+    else do
+      case e of
+          V.EvKey V.KEsc [] -> halt
+          V.EvKey (V.KChar c) [] -> do
+              let newInput = userInput gs ++ [c]
+              let parsedInput = if length newInput > 1 &&
+                        compareColorPlayer (getBoardPieceColor (board gs) (rankToIndex $ newInput !! 1, fileToIndex $ newInput !! 0)) (currentPlayer gs)
+                    then Just (fileToIndex $ newInput !! 0, rankToIndex $ newInput !! 1)
+                    else Nothing
+              case parsedInput of
+                    Just (startFile, startRank) -> do
+                        let possibleMoves = [(endRank, endFile) | endRank <- [0..7], endFile <- [0..7], isLegalMove (board gs) (startRank, startFile) (endRank, endFile)]
+                        let highlightedBoard = highlightPossibleMoves (board gs) possibleMoves
+                        put (gs { userInput = newInput, board = highlightedBoard })
+                        return ()
+                    Nothing -> do
+                        put (gs { userInput = newInput })
+                        return ()
+          -- backspace
+          V.EvKey V.KBS [] -> do
+              let newInput = safeBack (userInput gs)
+              if length newInput < 2 then do
+                    put (gs { userInput = newInput, board = resetHighlightedBoard (board gs) })
+                else do
+                  put (gs { userInput = newInput })
+              return ()
+          V.EvKey V.KEnter [] -> do
+              -- Check if the move syntax is valid
+              let moveInput = userInput gs
 
-            --  -- the below lines are messing up the alignment of chessboard
-            --  liftIO $ putStrLn $ if validSyntax then "Valid move syntax" else "Invalid move syntax"
-             case parseMove (currentPlayer gs) moveInput of
-                 Nothing -> put (gs { errorMsg = "Failed to parse move" })
-                 Just (startPos, endPos) -> do
-            --          liftIO $ putStrLn $ "Start position: " ++ show startPos
-            --          liftIO $ putStrLn $ "End position: " ++ show endPos
-            --      Nothing -> liftIO $ putStrLn "Failed to parse move"
-            --  Execute the move if the syntax is valid
-                    let (Just pc) = getPieceAt (board gs) startPos
-                    newGameState <- if isLegalMove (board gs) startPos endPos
-                                        then if compareColorPlayer (pc ^. pieceColor) (currentPlayer gs)
-                                          then liftIO $ executeMove gs moveInput
-                                        else do
-                                            return gs { errorMsg = "Not your turn!" }
-                                    else do
-                                      return gs { errorMsg = "Invalid Move" }
-                    put newGameState
-                    return ()
-         _ -> return ()
+              --  let validSyntax = isValidChessMove moveInput
+
+              --  -- the below lines are messing up the alignment of chessboard
+              --  liftIO $ putStrLn $ if validSyntax then "Valid move syntax" else "Invalid move syntax"
+              case parseMove (currentPlayer gs) moveInput of
+                  Nothing -> put (gs { errorMsg = "Failed to parse move" })
+                  Just (startPos, endPos) -> do
+              --          liftIO $ putStrLn $ "Start position: " ++ show startPos
+              --          liftIO $ putStrLn $ "End position: " ++ show endPos
+              --      Nothing -> liftIO $ putStrLn "Failed to parse move"
+              --  Execute the move if the syntax is valid
+                      let (Just pc) = getPieceAt (board gs) startPos
+                      newGameState <- if isLegalMove (board gs) startPos endPos
+                                          then if compareColorPlayer (pc ^. pieceColor) (currentPlayer gs)
+                                            then liftIO $ executeMove gs moveInput
+                                          else do
+                                              return gs { errorMsg = "Not your turn!" }
+                                      else do
+                                        return gs { errorMsg = "Invalid Move" }
+                      put newGameState
+                      return ()
+          _ -> return ()
 appEvent _ = return ()
 
 
@@ -139,5 +167,15 @@ app =
 
 main :: IO ()
 main = do
+  -- Check if the port 8080 is already bound or not. If not then call the createServer which will make the current terminal the host
+  -- If the port is already bound, then call the connectToServer which will make the current terminal the client
+  isAvailable <- isPortAvailable "8080"
+  if isAvailable then do
+    putStrLn "Starting server..."
+    forkIO createServer
+  else do
+    let myPlayer = Black
+    putStrLn "Connecting to server..."
+    forkIO connectToServer
   _ <- defaultMain app initialGameState
   return ()

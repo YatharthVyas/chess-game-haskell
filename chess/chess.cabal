@@ -29,16 +29,20 @@ executable chess
                     TestData,
                     Piece,
                     ValidateMove,
-                    UI
+                    UI,
+                    Server,
+                    Client
 
     -- Modules included in this executable, other than Main.
     -- other-modules:
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
-    build-depends:  base,
+    build-depends:  base ,
+                    bytestring,
                     brick,
                     vty ,
+                    network,
                     containers ,
                     text ,
                     microlens >= 0.3.0.0,
