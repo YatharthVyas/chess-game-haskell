@@ -1,6 +1,7 @@
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 {-# HLINT ignore "Use head" #-}
 {-# HLINT ignore "Redundant if" #-}
+{-# HLINT ignore "Use null" #-}
 
 module Main where
 import Lens.Micro ((^.))
@@ -23,13 +24,11 @@ import Brick.Widgets.Center (hCenter, vCenter)
 import Control.Monad.State
 import Data.Monoid ((<>))
 import qualified Graphics.Vty as V
+import Network.Socket.ByteString (recv, sendAll)
  -- Import liftIO
 import Control.Monad.IO.Class (liftIO)
 import UI
-import Network.Socket
-import Network.Socket.ByteString (recv, sendAll)
-import Network.Socket
-import Types
+
 {-
 1. We can probably run it such that it checks if the socket 8080 is being used or not, if it isnt then the terminal which checked it becomes the host and will be white. It will create a socket which will accept connections at port 8080
 
@@ -45,7 +44,7 @@ This point onwards i think we can try and disable the terminal of the player aft
 -- We can do this by using a variable which compares with the one in Gamestate and if it is different, then we can disable the terminal
 
 initialGameState :: GameState
-initialGameState = GameState initialBoard White White "" "" "" undefined
+initialGameState = GameState initialBoard White White "" "" "" undefined False
 
 safeBack :: [a] -> [a]
 safeBack [] = []
@@ -100,7 +99,6 @@ appEvent (VtyEvent e) = do
         newGameState <- liftIO $ executeMove gs (C.unpack msg)
         put newGameState
         return ()
-
     else do
       case e of
           V.EvKey V.KEsc [] -> halt
@@ -130,18 +128,9 @@ appEvent (VtyEvent e) = do
           V.EvKey V.KEnter [] -> do
               -- Check if the move syntax is valid
               let moveInput = userInput gs
-
-              --  let validSyntax = isValidChessMove moveInput
-
-              --  -- the below lines are messing up the alignment of chessboard
-              --  liftIO $ putStrLn $ if validSyntax then "Valid move syntax" else "Invalid move syntax"
               case parseMove (currentPlayer gs) moveInput of
                   Nothing -> put (gs { errorMsg = "Failed to parse move" })
                   Just (startPos, endPos) -> do
-              --          liftIO $ putStrLn $ "Start position: " ++ show startPos
-              --          liftIO $ putStrLn $ "End position: " ++ show endPos
-              --      Nothing -> liftIO $ putStrLn "Failed to parse move"
-              --  Execute the move if the syntax is valid
                       let (Just pc) = getPieceAt (board gs) startPos
                       newGameState <- if isLegalMove (board gs) startPos endPos
                                           then if compareColorPlayer (pc ^. pieceColor) (currentPlayer gs)
@@ -153,11 +142,49 @@ appEvent (VtyEvent e) = do
                                               return gs { errorMsg = "Not your turn!" }
                                       else do
                                         return gs { errorMsg = "Invalid Move" }
-                      put newGameState
+                      
+                      -- Look if the king is in check to invalidate all other moves 
+                      if isCheck newGameState then do
+                          let isBool = if currentPlayer gs == White
+                                            then isKingCheck (board newGameState) Black
+                                        else isKingCheck (board newGameState) White
+                          if isBool then
+                            put gs { errorMsg = "In Check State!" }
+                          else do
+                            put newGameState { isCheck = False }
+
+                      -- if king not in check, look if the move puts the opponent king in check
+                      else do
+                        -- self check
+                        let isBool = if currentPlayer gs == White
+                                        then isKingCheck (board newGameState) Black
+                                      else isKingCheck (board newGameState) White
+                        if isBool then
+                          put gs { errorMsg = "Invalid Move! Will result in Check" }
+                        else do
+                          let isBool = isKingCheck (board newGameState) (currentPlayer gs)
+                          
+                          put newGameState { isCheck = isBool }
+
                       return ()
           _ -> return ()
 appEvent _ = return ()
 
+isKingCheck :: Board -> Player -> Bool
+isKingCheck board player =
+  -- traverse the board and find the king of the opponent player
+  let opponent = if player == White then Black else White
+      kingPos = [(rank, file) | rank <- [0..7], file <- [0..7], case getPieceAt board (rank, file) of
+                                                                  Just pc -> case pc ^. pieceType of
+                                                                                King -> compareColorPlayer (pc ^. pieceColor) opponent
+                                                                                _ -> False
+                                                                  _ -> False]
+      result = head kingPos
+      pieces = [(rank, file) | rank <- [0..7], file <- [0..7], case getPieceAt board (rank, file) of
+                                                                  Just pc -> compareColorPlayer (pc ^. pieceColor) player
+                                                                  _ -> False]
+      possibleMoves = [True | start <- pieces, isLegalMove board start result]
+  in if length possibleMoves > 0 then True else False
 
 app :: App GameState e ()
 app =
