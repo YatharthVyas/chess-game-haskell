@@ -30,18 +30,13 @@ import Control.Monad.IO.Class (liftIO)
 import UI
 
 {-
-1. We can probably run it such that it checks if the socket 8080 is being used or not, if it isnt then the terminal which checked it becomes the host and will be white. It will create a socket which will accept connections at port 8080
+1. We  probably run it such that it checks if the socket 8080 is being used or not, if it isnt then the terminal which checked it becomes the host and will be white. It will create a socket which will accept connections at port 8080
 
 2. On the other hand, when the second terminal sees that socket 8080 is already bound, then it will send a connection request to that socket and connect to it and will take the color as black
 
 3. As soon as the first terminal receives the request, the game will start and chessboard shows up on both terminals
 
-This point onwards i think we can try and disable the terminal of the player after they have played their move until they receive a move from the other player. Since the move gets validated before its sent, we can call makeMove on the receiver and enable the terminal again
-
 -}
-
--- We need to set a flag which checks with the gameboard later on to see if we should disable the terminal or not
--- We can do this by using a variable which compares with the one in Gamestate and if it is different, then we can disable the terminal
 
 initialGameState :: GameState
 initialGameState = GameState initialBoard White White "" "" "" undefined False
