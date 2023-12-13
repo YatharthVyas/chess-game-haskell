@@ -8,18 +8,16 @@ import System.Environment (getArgs)
 import Control.Exception (try, catch, bracketOnError, finally ) 
 import System.IO.Error ( catchIOError, isAlreadyInUseError )
 
-createServer :: IO ()
+createServer :: IO Socket
 createServer = withSocketsDo $ do
     -- args <- getArgs
     -- let port = head args
     let port = "8080"
     addr <- resolve port
     sock <- open addr
-    putStrLn $ "Listening on " ++ port
+    -- return the connection object as this is what the server uses to receive and send data
     (conn, _) <- accept sock
-    forkIO $ handleConn conn
-    loop sock
-    finally (loop sock) (close sock)
+    return conn
 
 isPortAvailable :: String -> IO Bool
 isPortAvailable port = do
@@ -43,20 +41,5 @@ open :: AddrInfo -> IO Socket
 open addr = do
     sock <- socket (addrFamily addr) (addrSocketType addr) (addrProtocol addr)
     bind sock (addrAddress addr)
-    listen sock 10
+    listen sock 2
     return sock
-
-loop :: Socket -> IO ()
-loop sock = do
-    (conn, _) <- accept sock
-    forkIO $ handleConn conn
-    loop sock
-
-handleConn :: Socket -> IO ()
-handleConn conn = do
-    msg <- recv conn 1024
-    if C.null msg
-        then return ()
-        else do
-            sendAll conn (C.pack "Wassup!\n")
-            handleConn conn

@@ -26,7 +26,10 @@ import qualified Graphics.Vty as V
  -- Import liftIO
 import Control.Monad.IO.Class (liftIO)
 import UI
-
+import Network.Socket
+import Network.Socket.ByteString (recv, sendAll)
+import Network.Socket
+import Types
 {-
 1. We can probably run it such that it checks if the socket 8080 is being used or not, if it isnt then the terminal which checked it becomes the host and will be white. It will create a socket which will accept connections at port 8080
 
@@ -40,11 +43,9 @@ This point onwards i think we can try and disable the terminal of the player aft
 
 -- We need to set a flag which checks with the gameboard later on to see if we should disable the terminal or not
 -- We can do this by using a variable which compares with the one in Gamestate and if it is different, then we can disable the terminal
-myPlayer :: Player
-myPlayer = White
 
 initialGameState :: GameState
-initialGameState = GameState initialBoard White "" "" ""
+initialGameState = GameState initialBoard White White "" "" "" undefined
 
 safeBack :: [a] -> [a]
 safeBack [] = []
@@ -93,9 +94,9 @@ compareColorPlayer c p
 appEvent :: BrickEvent () e -> EventM () GameState ()
 appEvent (VtyEvent e) = do
     gs <- get
-    if myPlayer != currentPlayer gs then do
-        -- Wait for the verified input from the other player and then call makeMove on the board once we receive the input
-        msg <- recv conn 1024
+    if myPlayer gs /= currentPlayer gs then do
+        -- Access the connection object from the connection tuple and receive the data. We know that the data will be a valid move
+        msg <- liftIO $ recv (connection gs) 1024
         newGameState <- liftIO $ executeMove gs (C.unpack msg)
         put newGameState
         return ()
@@ -144,7 +145,10 @@ appEvent (VtyEvent e) = do
                       let (Just pc) = getPieceAt (board gs) startPos
                       newGameState <- if isLegalMove (board gs) startPos endPos
                                           then if compareColorPlayer (pc ^. pieceColor) (currentPlayer gs)
-                                            then liftIO $ executeMove gs moveInput
+                                            then do
+                                              -- Send data to the other player
+                                              liftIO $ sendAll (connection gs) (C.pack moveInput)
+                                              liftIO $ executeMove gs moveInput
                                           else do
                                               return gs { errorMsg = "Not your turn!" }
                                       else do
@@ -172,10 +176,14 @@ main = do
   isAvailable <- isPortAvailable "8080"
   if isAvailable then do
     putStrLn "Starting server..."
-    forkIO createServer
+    -- Store the socket obtained from createServer in the first value of the connection tuple
+    connection_object <- createServer
+    let initGameState = initialGameState{connection = connection_object}
+    _ <- defaultMain app initGameState
+    return ()
   else do
-    let myPlayer = Black
     putStrLn "Connecting to server..."
-    forkIO connectToServer
-  _ <- defaultMain app initialGameState
-  return ()
+    connection_object <- connectToServer
+    let initGameState = initialGameState{myPlayer = Black, connection = connection_object}
+    _ <- defaultMain app initGameState
+    return ()
