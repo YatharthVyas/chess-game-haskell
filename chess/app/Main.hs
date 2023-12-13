@@ -181,6 +181,20 @@ isKingCheck board player =
       possibleMoves = [True | start <- pieces, isLegalMove board start result]
   in if length possibleMoves > 0 then True else False
 
+initialBoard2 :: Board
+initialBoard2 = [generateRow 0 [Just whiteRook, Just whiteKnight, Just whiteBishop, Just whiteQueen, Just whiteKing, Just whiteBishop, Just whiteKnight, Just whiteRook],
+                generateRow 1 [Just whitePawn, Just whitePawn, Just whitePawn, Nothing, Just whitePawn, Just whitePawn, Just whitePawn, Just whitePawn],
+                generateRow 2 (replicate 8 Nothing),
+                generateRow 3 [Nothing, Just blackBishop, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing], 
+                generateRow 4 [Nothing, Nothing, Nothing, Just whitePawn, Nothing, Nothing, Nothing, Nothing], 
+                generateRow 5 (replicate 8 Nothing),
+                generateRow 6 [Just blackPawn, Just blackPawn, Just blackPawn, Just blackPawn, Nothing, Just blackPawn, Just blackPawn, Just blackPawn],
+                generateRow 7 [Just blackRook, Just blackKnight, Just blackBishop, Just blackQueen, Just blackKing, Nothing, Just blackKnight, Just blackRook]
+                ]
+
+-- >>> isKingCheck initialBoard2 Black
+-- True
+
 app :: App GameState e ()
 app =
   App {appDraw = drawUI
