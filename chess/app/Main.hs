@@ -1,6 +1,7 @@
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 {-# HLINT ignore "Use head" #-}
 {-# HLINT ignore "Redundant if" #-}
+{-# HLINT ignore "Use null" #-}
 
 module Main where
 import Lens.Micro ((^.))
@@ -24,7 +25,7 @@ import Control.Monad.IO.Class (liftIO)
 import UI
 
 initialGameState :: GameState
-initialGameState = GameState initialBoard White "" "" ""
+initialGameState = GameState initialBoard White "" "" "" False
 
 safeBack :: [a] -> [a]
 safeBack [] = []
@@ -121,11 +122,63 @@ appEvent (VtyEvent e) = do
                                             return gs { errorMsg = "Not your turn!" }
                                     else do
                                       return gs { errorMsg = "Invalid Move" }
-                    put newGameState
+                    
+                    -- Look if the king is in check to invalidate all other moves 
+                    if isCheck newGameState then do
+                        let isBool = if currentPlayer gs == White
+                                          then isKingCheck (board newGameState) Black
+                                      else isKingCheck (board newGameState) White
+                        if isBool then
+                          put gs { errorMsg = "In Check State!" }
+                        else do
+                          put newGameState { isCheck = False }
+
+                    -- if king not in check, look if the move puts the opponent king in check
+                    else do
+                      -- self check
+                      let isBool = if currentPlayer gs == White
+                                      then isKingCheck (board newGameState) Black
+                                    else isKingCheck (board newGameState) White
+                      if isBool then
+                        put gs { errorMsg = "Invalid Move! Will result in Check" }
+                      else do
+                        let isBool = isKingCheck (board newGameState) (currentPlayer gs)
+                        
+                        put newGameState { isCheck = isBool }
+
                     return ()
          _ -> return ()
 appEvent _ = return ()
 
+isKingCheck :: Board -> Player -> Bool
+isKingCheck board player =
+  -- traverse the board and find the king of the opponent player
+  let opponent = if player == White then Black else White
+      kingPos = [(rank, file) | rank <- [0..7], file <- [0..7], case getPieceAt board (rank, file) of
+                                                                  Just pc -> case pc ^. pieceType of
+                                                                                King -> compareColorPlayer (pc ^. pieceColor) opponent
+                                                                                _ -> False
+                                                                  _ -> False]
+      result = head kingPos
+      pieces = [(rank, file) | rank <- [0..7], file <- [0..7], case getPieceAt board (rank, file) of
+                                                                  Just pc -> compareColorPlayer (pc ^. pieceColor) player
+                                                                  _ -> False]
+      possibleMoves = [True | start <- pieces, isLegalMove board start result]
+  in if length possibleMoves > 0 then True else False
+
+initialBoard2 :: Board
+initialBoard2 = [generateRow 0 [Just whiteRook, Just whiteKnight, Just whiteBishop, Just whiteQueen, Just whiteKing, Just whiteBishop, Just whiteKnight, Just whiteRook],
+                generateRow 1 [Just whitePawn, Just whitePawn, Just whitePawn, Nothing, Just whitePawn, Just whitePawn, Just whitePawn, Just whitePawn],
+                generateRow 2 (replicate 8 Nothing),
+                generateRow 3 [Nothing, Just blackBishop, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing], 
+                generateRow 4 [Nothing, Nothing, Nothing, Just whitePawn, Nothing, Nothing, Nothing, Nothing], 
+                generateRow 5 (replicate 8 Nothing),
+                generateRow 6 [Just blackPawn, Just blackPawn, Just blackPawn, Just blackPawn, Nothing, Just blackPawn, Just blackPawn, Just blackPawn],
+                generateRow 7 [Just blackRook, Just blackKnight, Just blackBishop, Just blackQueen, Just blackKing, Nothing, Just blackKnight, Just blackRook]
+                ]
+
+-- >>> isKingCheck initialBoard2 Black
+-- True
 
 app :: App GameState e ()
 app =

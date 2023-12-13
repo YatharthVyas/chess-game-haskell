@@ -21,7 +21,8 @@ data GameState = GameState {
     currentPlayer :: Player,
     userInput :: String,
     lastMove :: String,
-    errorMsg :: String
+    errorMsg :: String,
+    isCheck :: Bool
   } deriving (Show)
 makeLenses ''GameState
 makeLenses ''Cell

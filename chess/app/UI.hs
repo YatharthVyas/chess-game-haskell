@@ -97,6 +97,7 @@ drawUI gs = [ withBorderStyle unicodeRounded $ border $ vBox
                     ,  borderBottom, padTop (Pad 2) $ padLeft (Pad 2) $ vBox [ str $ "Current turn: " ++ show (currentPlayer gs)
                         , str $ "Last Move: " ++ show (lastMove gs)
                         , str $ "Log: " ++ show (errorMsg gs)
+                        , str $ "Check: " ++ show (isCheck gs)
                         , str "Enter your move: "
                         , str $ userInput gs
                       ]

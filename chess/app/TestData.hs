@@ -67,6 +67,17 @@ initialBoard = [generateRow 0 [Just whiteRook, Just whiteKnight, Just whiteBisho
                 generateRow 7 [Just blackRook, Just blackKnight, Just blackBishop, Just blackQueen, Just blackKing, Just blackBishop, Just blackKnight, Just blackRook]
                 ]
 
+-- checkmate layout of a chess board
+-- initialBoard :: Board
+-- initialBoard = [generateRow 0 [Just whiteRook, Just whiteKnight, Just whiteBishop, Just whiteQueen, Just whiteKing, Just whiteBishop, Just whiteKnight, Just whiteRook],
+--                 generateRow 1 [Just whitePawn, Just whitePawn, Just whitePawn, Nothing, Just whitePawn, Just whitePawn, Just whitePawn, Just whitePawn],
+--                 generateRow 2 (replicate 8 Nothing),
+--                 generateRow 3 [Nothing, Nothing, Nothing, Just whitePawn, Nothing, Nothing, Nothing, Nothing], 
+--                 generateRow 4 [Nothing, Nothing, Just blackBishop, Nothing, Nothing, Nothing, Nothing, Nothing], 
+--                 generateRow 5 (replicate 8 Nothing),
+--                 generateRow 6 [Just blackPawn, Just blackPawn, Just blackPawn, Just blackPawn, Nothing, Just blackPawn, Just blackPawn, Just blackPawn],
+--                 generateRow 7 [Just blackRook, Just blackKnight, Just blackBishop, Just blackQueen, Just blackKing, Nothing, Just blackKnight, Just blackRook]
+--                 ]
 
 -- initial layout of a chess board without pawns for testing
 initialBoardWithoutPawn :: Board
