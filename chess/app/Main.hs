@@ -130,8 +130,6 @@ appEvent (VtyEvent e) = do
                       newGameState <- if isLegalMove (board gs) startPos endPos
                                           then if compareColorPlayer (pc ^. pieceColor) (currentPlayer gs)
                                             then do
-                                              -- Send data to the other player
-                                              liftIO $ sendAll (connection gs) (C.pack moveInput)
                                               liftIO $ executeMove gs moveInput
                                           else do
                                               return gs { errorMsg = "Not your turn!" }
@@ -146,6 +144,8 @@ appEvent (VtyEvent e) = do
                           if isBool then
                             put gs { errorMsg = "In Check State!" }
                           else do
+                            -- Send data to the other player
+                            liftIO $ sendAll (connection gs) (C.pack moveInput)
                             put newGameState { isCheck = False }
 
                       -- if king not in check, look if the move puts the opponent king in check
@@ -158,7 +158,8 @@ appEvent (VtyEvent e) = do
                           put gs { errorMsg = "Invalid Move! Will result in Check" }
                         else do
                           let isBool = isKingCheck (board newGameState) (currentPlayer gs)
-                          
+                          -- Send data to the other player. It doesnt matter if we access connection of gs or newGameState since they are the same
+                          liftIO $ sendAll (connection gs) (C.pack moveInput)
                           put newGameState { isCheck = isBool }
 
                       return ()
