@@ -89,6 +89,28 @@ getPossibleMoves b (x,y) = filter (isLegalMove b (x,y)) [(x', y') | x' <- [0..7]
 getBoardPieceColor :: Board -> (Int, Int) -> Color
 getBoardPieceColor b (x,y) = getPieceColor $ maybe (Piece blue Pawn) id (getPieceAt b (x,y))
 
+isKingCheck :: Board -> Player -> Bool
+isKingCheck board player =
+  -- traverse the board and find the king of the opponent player
+  let opponent = if player == White then Black else White
+      kingPos = [(rank, file) | rank <- [0..7], file <- [0..7], case getPieceAt board (rank, file) of
+                                                                  Just pc -> case pc ^. pieceType of
+                                                                                King -> compareColorPlayer (pc ^. pieceColor) opponent
+                                                                                _ -> False
+                                                                  _ -> False]
+      result = head kingPos
+      pieces = [(rank, file) | rank <- [0..7], file <- [0..7], case getPieceAt board (rank, file) of
+                                                                  Just pc -> compareColorPlayer (pc ^. pieceColor) player
+                                                                  _ -> False]
+      possibleMoves = [True | start <- pieces, isLegalMove board start result]
+  in if length possibleMoves > 0 then True else False
+
+compareColorPlayer :: V.Color -> Player -> Bool
+compareColorPlayer c p
+  | c == V.black && p == Black = True
+  | c == V.white && p == White = True
+  | otherwise = False
+
 -- >>> getBoardPieceColor initialBoard (0,0) == white
 -- True
 -------------------------------------------------

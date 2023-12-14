@@ -11,7 +11,7 @@ import Client (connectToServer)
 import qualified Data.ByteString.Char8 as C
 import Control.Concurrent (forkIO)
 import ValidateMove (parseMove, fileToIndex, rankToIndex)
-import Piece (isLegalMove, getPieceAt, canMove, pathClear, getBoardPieceColor)
+import Piece (isLegalMove, getPieceAt, canMove, pathClear, getBoardPieceColor, isKingCheck, compareColorPlayer)
 import TestData
 import Data.Char (isDigit, isUpper)
 {-# LANGUAGE OverloadedStrings #-}
@@ -78,12 +78,6 @@ executeMove gs moveInput =
         return gs { userInput = "", errorMsg="Invalid move. Try again." }
     Nothing -> do
       return gs { userInput = "", errorMsg="Invalid move format." }
-
-compareColorPlayer :: V.Color -> Player -> Bool
-compareColorPlayer c p
-  | c == V.black && p == Black = True
-  | c == V.white && p == White = True
-  | otherwise = False
 
 appEvent :: BrickEvent () e -> EventM () GameState ()
 appEvent (VtyEvent e) = do
@@ -166,22 +160,6 @@ appEvent (VtyEvent e) = do
           _ -> return ()
 appEvent _ = return ()
 
-isKingCheck :: Board -> Player -> Bool
-isKingCheck board player =
-  -- traverse the board and find the king of the opponent player
-  let opponent = if player == White then Black else White
-      kingPos = [(rank, file) | rank <- [0..7], file <- [0..7], case getPieceAt board (rank, file) of
-                                                                  Just pc -> case pc ^. pieceType of
-                                                                                King -> compareColorPlayer (pc ^. pieceColor) opponent
-                                                                                _ -> False
-                                                                  _ -> False]
-      result = head kingPos
-      pieces = [(rank, file) | rank <- [0..7], file <- [0..7], case getPieceAt board (rank, file) of
-                                                                  Just pc -> compareColorPlayer (pc ^. pieceColor) player
-                                                                  _ -> False]
-      possibleMoves = [True | start <- pieces, isLegalMove board start result]
-  in if length possibleMoves > 0 then True else False
-
 initialBoard2 :: Board
 initialBoard2 = [generateRow 0 [Just whiteRook, Just whiteKnight, Just whiteBishop, Just whiteQueen, Just whiteKing, Just whiteBishop, Just whiteKnight, Just whiteRook],
                 generateRow 1 [Just whitePawn, Just whitePawn, Just whitePawn, Nothing, Just whitePawn, Just whitePawn, Just whitePawn, Just whitePawn],
@@ -192,9 +170,6 @@ initialBoard2 = [generateRow 0 [Just whiteRook, Just whiteKnight, Just whiteBish
                 generateRow 6 [Just blackPawn, Just blackPawn, Just blackPawn, Just blackPawn, Nothing, Just blackPawn, Just blackPawn, Just blackPawn],
                 generateRow 7 [Just blackRook, Just blackKnight, Just blackBishop, Just blackQueen, Just blackKing, Nothing, Just blackKnight, Just blackRook]
                 ]
-
--- >>> isKingCheck initialBoard2 Black
--- True
 
 app :: App GameState e ()
 app =
