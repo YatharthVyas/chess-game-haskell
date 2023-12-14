@@ -4,7 +4,7 @@ import Graphics.Vty.Attributes
 import Lens.Micro ((^.))
 import Types
 import TestData
-import Data.Maybe (isNothing)
+import Data.Maybe (isNothing, isJust, fromMaybe)
 import qualified Graphics.Vty as V
 
 ---------------------------------------
@@ -61,11 +61,11 @@ validPawnAttack (Piece c Pawn) (x,y) (x', y') = (x' - x) == direction && abs (y'
 pathClear :: Piece -> Board -> (Int, Int) -> (Int, Int) -> Bool
 pathClear p@(Piece c Pawn) b start@(x,y) end@(x', y') = if y == y' then
                                                             if abs (x - x') == 2 then isNothing (getPieceAt b (x + d, y)) && isNothing (getPieceAt b (x + 2*d, y)) else isNothing (getPieceAt b (x + d, y))
-                                                            else getPieceAt b end /= Nothing && getBoardPieceColor b end /= c
+                                                            else isJust (getPieceAt b end) && getBoardPieceColor b end /= c
                                                             where d = if c == black then -1 else 1    -- move forward
 pathClear (Piece _ Knight) b (x,y) (x', y') = True -- knight can jump
 pathClear (Piece _ Bishop) b (x,y) (x', y') = abs (x - x') == 1 || checkLinearPath b (x,y) (x', y') DirXY -- use signum and define XY'
-pathClear (Piece _ Rook) b (x,y) (x', y') = abs (x - x') == 1 || abs(y - y') == 1 || checkLinearPath b (x, y) (x', y') d where d = if x == x' then DirY else DirX -- we check abs gap because checkLinearPath needs more than 1 gap
+pathClear (Piece _ Rook) b (x,y) (x', y') = abs (x - x') == 1 || abs (y - y') == 1 || checkLinearPath b (x, y) (x', y') d where d = if x == x' then DirY else DirX -- we check abs gap because checkLinearPath needs more than 1 gap
 pathClear (Piece c Queen) b (x,y) (x', y') = if x == x' || y == y' then pathClear (Piece c Rook) b (x,y) (x', y')
                                                 else  pathClear (Piece c Bishop) b (x,y) (x', y')
 pathClear (Piece _ King) b (x,y) (x', y') = True -- king can move 1 step in any direction
@@ -80,14 +80,18 @@ isLegalMove b initial@(x,y) final@(x', y') = case getPieceAt b (x,y) of
                                             && pathClear p b initial final
                                             && (case getPieceAt b final of     -- final location should be empty or have a piece of opposite color
                                                     Nothing -> True
-                                                    Just p' -> getPieceColor p /= getPieceColor p')
+                                                    Just p' -> getPieceColor p /= getPieceColor p'
+                                                    -- castling
+                                                    || (getPieceAt b final == Just (Piece (getPieceColor p) King)
+                                                    && getPieceAt b initial == Just (Piece (getPieceColor p) Rook)))
 
 -- Get possible Moves for a piece
 getPossibleMoves :: Board -> (Int, Int) -> [(Int, Int)]
 getPossibleMoves b (x,y) = filter (isLegalMove b (x,y)) [(x', y') | x' <- [0..7], y' <- [0..7]]
 
 getBoardPieceColor :: Board -> (Int, Int) -> Color
-getBoardPieceColor b (x,y) = getPieceColor $ maybe (Piece blue Pawn) id (getPieceAt b (x,y))
+getBoardPieceColor b (x,y) = getPieceColor $ fromMaybe (Piece blue Pawn) (getPieceAt b (x,y))
+
 
 isKingCheck :: Board -> Player -> Bool
 isKingCheck board player =
@@ -113,12 +117,10 @@ compareColorPlayer c p
 
 -- >>> getBoardPieceColor initialBoard (0,0) == white
 -- True
+
 -------------------------------------------------
 -----   Tests for Piece Movement functions  -----
 -------------------------------------------------
-
--- >>> (1,1) (2,2)
--- >>> (2,2) (1,1)
 
 -- moving pawn diagonally
 -- >>> isLegalMove initialBoard (1,1) (2,2)
@@ -181,9 +183,6 @@ compareColorPlayer c p
 -- >>> checkLinearPath initialBoard (0,3) (0,5) DirX
 -- False
 
--- >>> getPossibleMoves initialBoard (0,0)
--- [(2,0),(3,0),(4,0),(5,0),(6,0),(7,0)]
-
 -- >>> isLegalMove initialBoard (0,0) (2,0)
 -- True
 
@@ -196,11 +195,3 @@ compareColorPlayer c p
 -- >>> pathClear (Piece white Bishop) initialBoard (0,5) (4,1)
 -- False
 
--- >>> [2..4]
--- [2,3,4]
-
--- >>> [4..2]
--- []
-
--- >>> zip [1 .. 3] [4 .. 2] -- where x = 0; y = 5; x' = 4; y' = 1; dirX = signum (x' - x); dirY = signum (y' - y)
--- []

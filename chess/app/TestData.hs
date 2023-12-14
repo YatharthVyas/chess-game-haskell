@@ -90,6 +90,17 @@ initialBoardWithoutPawn = [generateRow 0 [Just whiteRook, Just whiteKnight, Just
                 generateRow 6 (replicate 8 Nothing),
                 generateRow 7 [Just blackRook, Just blackKnight, Just blackBishop, Just blackQueen, Just blackKing, Just blackBishop, Just blackKnight, Just blackRook]
                 ]
+-- initial layout of a chess board
+initialCastlingBoard :: Board
+initialCastlingBoard = [generateRow 0 [Just whiteRook, Just whiteKnight, Just whiteBishop, Just whiteQueen, Just whiteKing, Nothing, Nothing, Just whiteRook],
+                generateRow 1 (replicate 8 (Just whitePawn)),
+                generateRow 2 (replicate 8 Nothing),
+                generateRow 3 (replicate 8 Nothing),
+                generateRow 4 (replicate 8 Nothing),
+                generateRow 5 (replicate 8 Nothing),
+                generateRow 6 (replicate 8 (Just blackPawn)),
+                generateRow 7 [Just blackRook, Just blackKnight, Just blackBishop, Just blackQueen, Just blackKing, Nothing, Nothing, Just blackRook]
+                ]
 
 ---------------------------------------------
 ------  Test Data for Piece Movement  -------

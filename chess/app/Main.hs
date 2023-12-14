@@ -54,9 +54,13 @@ makeMove board (startRank, startFile) (endRank, endFile) =
         endCell = (board !! endRank) !! endFile
         startCellColor = _cellColor startCell
         endCellColor = _cellColor endCell
+        startPieceColor = case _cellPiece startCell of
+            Just (Piece c _) -> c
+            Nothing -> V.blue
+        newStartCellPiece = if getPieceAt board (endRank, endFile) == Just (Piece startPieceColor King) then Just (Piece startCellColor King) else Nothing
         -- We want the updated position to have the piece from the start position and the color from the end position
         newStartCell = Cell endCellColor (_cellPiece startCell) endCellColor
-        emptyCell = Cell startCellColor Nothing startCellColor   -- Create an empty cell with the same color
+        emptyCell = Cell startCellColor newStartCellPiece startCellColor   -- Create an empty cell with the same color
         updatedRowStart = take startFile (board !! startRank) ++ [emptyCell] ++ drop (startFile + 1) (board !! startRank)
         updatedBoardStart = take startRank board ++ [updatedRowStart] ++ drop (startRank + 1) board
         updatedRowEnd = take endFile (updatedBoardStart !! endRank) ++ [newStartCell] ++ drop (endFile + 1) (updatedBoardStart !! endRank)
@@ -129,8 +133,8 @@ appEvent (VtyEvent e) = do
                                               return gs { errorMsg = "Not your turn!" }
                                       else do
                                         return gs { errorMsg = "Invalid Move" }
-                      
-                      -- Look if the king is in check to invalidate all other moves 
+
+                      -- Look if the king is in check to invalidate all other moves
                       if isCheck newGameState then do
                           let isBool = if currentPlayer gs == White
                                             then isKingCheck (board newGameState) Black
@@ -164,8 +168,8 @@ initialBoard2 :: Board
 initialBoard2 = [generateRow 0 [Just whiteRook, Just whiteKnight, Just whiteBishop, Just whiteQueen, Just whiteKing, Just whiteBishop, Just whiteKnight, Just whiteRook],
                 generateRow 1 [Just whitePawn, Just whitePawn, Just whitePawn, Nothing, Just whitePawn, Just whitePawn, Just whitePawn, Just whitePawn],
                 generateRow 2 (replicate 8 Nothing),
-                generateRow 3 [Nothing, Just blackBishop, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing], 
-                generateRow 4 [Nothing, Nothing, Nothing, Just whitePawn, Nothing, Nothing, Nothing, Nothing], 
+                generateRow 3 [Nothing, Just blackBishop, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing],
+                generateRow 4 [Nothing, Nothing, Nothing, Just whitePawn, Nothing, Nothing, Nothing, Nothing],
                 generateRow 5 (replicate 8 Nothing),
                 generateRow 6 [Just blackPawn, Just blackPawn, Just blackPawn, Just blackPawn, Nothing, Just blackPawn, Just blackPawn, Just blackPawn],
                 generateRow 7 [Just blackRook, Just blackKnight, Just blackBishop, Just blackQueen, Just blackKing, Nothing, Just blackKnight, Just blackRook]
