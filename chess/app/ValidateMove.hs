@@ -4,10 +4,10 @@ import Data.Char (isDigit, isUpper)
 import Types
 
 fileToIndex :: Char -> Int
-fileToIndex file = if file >= 'a' && file <= 'h' then fromEnum file - fromEnum 'a' else error "Invalid file" -- @TODO: Handle this error
+fileToIndex file = if file >= 'a' && file <= 'h' then fromEnum file - fromEnum 'a' else -1 -- @TODO: Handle this error
 
 rankToIndex ::  Char -> Int
-rankToIndex rank = if rank >= '1' && rank <= '8' then fromEnum rank - fromEnum '1' else error "Invalid rank"  -- Subtract from 8 for zero-indexing
+rankToIndex rank = if rank >= '1' && rank <= '8' then fromEnum rank - fromEnum '1' else -1 -- Subtract from 8 for zero-indexing
 
 -- Parses a move string (e.g., "e2e4") - ((1, 4), (3, 4)) into start and end board indices
 parseMove :: Player -> String -> Maybe ((Int, Int), (Int, Int))
