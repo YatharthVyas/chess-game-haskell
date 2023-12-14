@@ -40,6 +40,9 @@ executable chess
     -- other-extensions:
     build-depends:  base ,
                     bytestring,
+                    tasty,
+                    tasty-hunit,
+                    QuickCheck,
                     brick,
                     vty ,
                     network,
@@ -53,3 +56,33 @@ executable chess
 
     hs-source-dirs:   app
     default-language: Haskell2010
+
+
+test-suite chess-test
+  type:             exitcode-stdio-1.0
+  hs-source-dirs:   app
+  Default-Extensions: OverloadedStrings
+  main-is:          Test.hs
+  build-depends:    base,
+                    bytestring,
+                    QuickCheck,
+                    tasty,
+                    tasty-hunit,
+                    tasty-quickcheck,
+                    QuickCheck,
+                    brick,
+                    vty ,
+                    network,
+                    containers ,
+                    text ,
+                    microlens >= 0.3.0.0,
+                    microlens-th,
+                    microlens-mtl,
+                    mtl,
+                    template-haskell,
+                    process
+  other-modules:  Types,
+                  TestData,
+                  Piece,
+                  ValidateMove,
+                  UI
