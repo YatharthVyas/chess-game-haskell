@@ -11,7 +11,7 @@ import Client (connectToHost)
 import qualified Data.ByteString.Char8 as C
 import Control.Concurrent (forkIO)
 import ValidateMove (parseMove, fileToIndex, rankToIndex, makeMove)
-import Piece (isLegalMove, getPieceAt, canMove, pathClear, getBoardPieceColor, compareColorPlayer)
+import Piece (isLegalMove, getPieceAt, pathClear, getBoardPieceColor, compareColorPlayer)
 import Check (isKingCheck, isCheckMate)
 import TestData
 import Data.Char (isDigit, isUpper)

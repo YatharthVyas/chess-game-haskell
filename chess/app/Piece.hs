@@ -20,36 +20,36 @@ getPieceAt b (x, y) = (b !! x !! y) ^. cellPiece
 getPieceColor:: Piece -> Color
 getPieceColor p = p ^. pieceColor
 
----------------------------------------
------  Piece Movement functions  ------
----------------------------------------
+----------------------------------------------
+-----  Piece Movement Helper functions  ------
+----------------------------------------------
 
 -- Verifies if the move is a legal chess move
-canMove :: Piece -> (Int, Int) -> (Int, Int) -> Bool
+validateMoveDirection :: Piece -> (Int, Int) -> (Int, Int) -> Bool
 -- Pawn can move 1 step forward or 2 steps forward if it is in its initial position
-canMove (Piece c Pawn) (x,y) (x', y')     = (abs (y' - y) == 1 && x - x' == direction) || (y == y' && direction * (x - x') <= stepSize && direction * (x - x') > 0)
+validateMoveDirection (Piece c Pawn) (x,y) (x', y')     = (abs (y' - y) == 1 && x - x' == direction) || (y == y' && direction * (x - x') <= stepSize && direction * (x - x') > 0)
                                             where stepSize = if (x == 1 && c == white) || (x == 6 && c == black) then 2 else 1
                                                   direction = if c == black then 1 else -1
-canMove (Piece _ Knight) (x,y) (x', y')   = (abs (x' - x) == 1 && abs (y' - y) == 2) || (abs (x' - x) == 2 && abs (y' - y) == 1)
+validateMoveDirection (Piece _ Knight) (x,y) (x', y')   = (abs (x' - x) == 1 && abs (y' - y) == 2) || (abs (x' - x) == 2 && abs (y' - y) == 1)
 -- Bishop can move diagonally eg: [2,3] to [4,5] , [4,1] and so on
-canMove (Piece _ Bishop) (x,y) (x', y')   = abs (x' - x) == abs (y' - y)
+validateMoveDirection (Piece _ Bishop) (x,y) (x', y')   = abs (x' - x) == abs (y' - y)
 -- Rook can move horizontally or vertically
-canMove (Piece _ Rook) (x,y) (x', y')     = (x' == x && y' /= y) || (x' /= x && y' == y)
+validateMoveDirection (Piece _ Rook) (x,y) (x', y')     = (x' == x && y' /= y) || (x' /= x && y' == y)
 -- Queen moves similar to Bishop and Rook
-canMove (Piece c Queen) start end = canMove (Piece c Rook) start end || canMove (Piece c Bishop) start end
+validateMoveDirection (Piece c Queen) start end = validateMoveDirection (Piece c Rook) start end || validateMoveDirection (Piece c Bishop) start end
 -- King can move 1 step in any direction
-canMove (Piece _ King) (x,y) (x', y')     = abs (x' - x) <= 1 && abs (y' - y) <= 1
+validateMoveDirection (Piece _ King) (x,y) (x', y')     = abs (x' - x) <= 1 && abs (y' - y) <= 1
 
 getList :: Int -> Int -> [Int]
 getList x y = if x > y then reverse [y .. x] else [x .. y]
 
 -- Checks if a linear path (horizontal, vertical or diagonal) is clear
-checkLinearPath:: Board -> (Int, Int) -> (Int, Int) -> Dir -> Bool
-checkLinearPath b (x,y) (x', y') DirX = let dir = signum (x' - x)
+pathClearHelper:: Board -> (Int, Int) -> (Int, Int) -> Dir -> Bool
+pathClearHelper b (x,y) (x', y') DirX = let dir = signum (x' - x)
                                             in all (\x1 -> isNothing (getPieceAt b (x1, y))) $ getList (x+dir) (x'-dir)
-checkLinearPath b (x,y) (x', y') DirY = let dir = signum (y' - y)
+pathClearHelper b (x,y) (x', y') DirY = let dir = signum (y' - y)
                                             in all (\y1 -> isNothing (getPieceAt b (x, y1))) $ getList (y+dir) (y'-dir)
-checkLinearPath b (x,y) (x', y') DirXY = let dirX = signum (x' - x)
+pathClearHelper b (x,y) (x', y') DirXY = let dirX = signum (x' - x)
                                              dirY = signum (y' - y)
                                              in all (\(x1, y1) -> isNothing (getPieceAt b (x1, y1))) $ zip (getList (x+dirX) (x'-dirX)) (getList (y+dirY) (y'-dirY))
 
@@ -64,19 +64,22 @@ pathClear p@(Piece c Pawn) b start@(x,y) end@(x', y') = if y == y' then
                                                             else isJust (getPieceAt b end) && getBoardPieceColor b end /= c
                                                             where d = if c == black then -1 else 1    -- move forward
 pathClear (Piece _ Knight) b (x,y) (x', y') = True -- knight can jump
-pathClear (Piece _ Bishop) b (x,y) (x', y') = abs (x - x') == 1 || checkLinearPath b (x,y) (x', y') DirXY -- use signum and define XY'
-pathClear (Piece _ Rook) b (x,y) (x', y') = abs (x - x') == 1 || abs (y - y') == 1 || checkLinearPath b (x, y) (x', y') d where d = if x == x' then DirY else DirX -- we check abs gap because checkLinearPath needs more than 1 gap
+pathClear (Piece _ Bishop) b (x,y) (x', y') = abs (x - x') == 1 || pathClearHelper b (x,y) (x', y') DirXY -- use signum and define XY'
+pathClear (Piece _ Rook) b (x,y) (x', y') = abs (x - x') == 1 || abs (y - y') == 1 || pathClearHelper b (x, y) (x', y') d where d = if x == x' then DirY else DirX -- we check abs gap because pathClearHelper needs more than 1 gap
 pathClear (Piece c Queen) b (x,y) (x', y') = if x == x' || y == y' then pathClear (Piece c Rook) b (x,y) (x', y')
                                                 else  pathClear (Piece c Bishop) b (x,y) (x', y')
 pathClear (Piece _ King) b (x,y) (x', y') = True -- king can move 1 step in any direction
 
+---------------------------------------
+-----  Validate Piece Movement   ------
+---------------------------------------
 
 -- Use this function to check if any move is legal
 isLegalMove:: Board -> (Int, Int) -> (Int, Int) -> Bool
 isLegalMove b initial@(x,y) final@(x', y') = case getPieceAt b (x,y) of
                                 Nothing -> False
                                 Just p -> x' >= 0 && x' < 8 && y' >= 0 && y' < 8    -- check out of bounds
-                                            && canMove p initial final
+                                            && validateMoveDirection p initial final
                                             && pathClear p b initial final
                                             && (case getPieceAt b final of     -- final location should be empty or have a piece of opposite color
                                                     Nothing -> True
@@ -165,7 +168,7 @@ compareColorPlayer c p
 -- True
 --
 
--- >>> checkLinearPath initialBoard (0,3) (0,5) DirX
+-- >>> pathClearHelper initialBoard (0,3) (0,5) DirX
 -- False
 
 -- >>> isLegalMove initialBoard (0,0) (2,0)
@@ -174,7 +177,7 @@ compareColorPlayer c p
 -- >>> pathClear (Piece black Rook) initialBoard (0,0) (2,0)
 -- False
 
--- >>> checkLinearPath initialBoard (0,0) (2,0) DirX
+-- >>> pathClearHelper initialBoard (0,0) (2,0) DirX
 -- False
 
 -- >>> pathClear (Piece white Bishop) initialBoard (0,5) (4,1)
