@@ -40,6 +40,7 @@ makeMove board (startRank, startFile) (endRank, endFile) =
         startPieceColor = case _cellPiece startCell of
             Just (Piece c _) -> c
             Nothing -> V.blue
+        -- castling
         newStartCellPiece = if getPieceAt board (endRank, endFile) == Just (Piece startPieceColor King) then Just (Piece startCellColor King) else Nothing
         -- We want the updated position to have the piece from the start position and the color from the end position
         newStartCell = Cell endCellColor (_cellPiece startCell) endCellColor

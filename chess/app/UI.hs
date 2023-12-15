@@ -72,21 +72,22 @@ renderBoard board = vBox $ zipWith (\i row -> hBox $ padCell (str $ show (8 - i)
                   [hBox $ padCell (str "  ") : map (padCell . str . (: [])) ['a' .. 'h']]
 
 
-attributeMap = const $ attrMap V.defAttr [ (attrName "BlackPiecewhiteCell", V.black `on` V.rgbColor 227 193 111),
-                                                  (attrName "WhitePieceWhiteCell", V.white `on` V.rgbColor 227 193 111),
-                                                  (attrName "BlackPieceBlackCell", V.black `on` V.rgbColor 184 139 74),
-                                                  (attrName "WhitePieceBlackCell", V.white `on` V.rgbColor 184 139 74),
-                                                  (attrName "BlackPieceWhiteCell", V.black `on` V.rgbColor 227 193 111),
-                                                  (attrName "WhiteCell", V.rgbColor 227 193 111 `on` V.rgbColor 227 193 111), -- rgb(227, 193, 111)
-                                                  (attrName "BlackCell", V.rgbColor 184 139 74 `on` V.rgbColor 184 139 74),  -- rgb(184, 139, 74)
-                                                  (attrName "startBlackPiece", V.black `on` V.rgbColor 87 143 96),              -- rgb(87, 143, 96)
-                                                  (attrName "startWhitePiece", V.white `on` V.rgbColor 87 143 96),
-                                                  (attrName "PossibleMoveWhiteCell", V.rgbColor 171 202 60 `on` V.rgbColor 227 193 111), -- rgb(171, 202, 60)
-                                                  (attrName "PossibleMoveBlackCell", V.rgbColor 171 202 60 `on` V.rgbColor 184 139 74),
-                                                  (attrName "PossibleMoveWhitePiece", V.white `on` V.rgbColor 180 80 80),      -- rgb(180, 80, 80)
-                                                  (attrName "PossibleMoveBlackPiece", V.black `on` V.rgbColor 180 80 80)
-                                                  -- (attrName "border", V.rgbColor 220 220 220 `on` V.rgbColor 184 139 74)
-                                                ]
+attributeMap = const $ attrMap V.defAttr [
+                                            -- regular cell with no highlight
+                                            (attrName "WhitePieceWhiteCell", V.white `on` V.rgbColor 227 193 111),
+                                            (attrName "BlackPieceBlackCell", V.black `on` V.rgbColor 184 139 74),
+                                            (attrName "WhitePieceBlackCell", V.white `on` V.rgbColor 184 139 74),
+                                            (attrName "BlackPieceWhiteCell", V.black `on` V.rgbColor 227 193 111),
+                                            -- empty cell with no highlight
+                                            (attrName "WhiteCell", V.rgbColor 227 193 111 `on` V.rgbColor 227 193 111), -- rgb(227, 193, 111)
+                                            (attrName "BlackCell", V.rgbColor 184 139 74 `on` V.rgbColor 184 139 74),  -- rgb(184, 139, 74)
+                                            -- highlighted cell
+                                            (attrName "PossibleMoveWhiteCell", V.rgbColor 171 202 60 `on` V.rgbColor 227 193 111), -- rgb(171, 202, 60)
+                                            (attrName "PossibleMoveBlackCell", V.rgbColor 171 202 60 `on` V.rgbColor 184 139 74),
+                                            (attrName "PossibleMoveWhitePiece", V.white `on` V.rgbColor 180 80 80),      -- rgb(180, 80, 80)
+                                            (attrName "PossibleMoveBlackPiece", V.black `on` V.rgbColor 180 80 80)
+                                            -- (attrName "border", V.rgbColor 220 220 220 `on` V.rgbColor 184 139 74)
+                                        ]
 
 drawUI :: GameState -> [Widget ()]
 drawUI gs = [ withBorderStyle unicodeRounded $ border $ vBox
