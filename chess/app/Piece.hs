@@ -109,6 +109,16 @@ isKingCheck board player =
       possibleMoves = [True | start <- pieces, isLegalMove board start result]
   in if length possibleMoves > 0 then True else False
 
+-- Attacker, Victim
+getLineOfAttack :: (Int, Int) -> (Int, Int) -> [(Int, Int)]
+getLineOfAttack (x,y) (x', y')
+      | x == x' && y /= y' = [(x, y'') | y'' <- [min y (y' - dirY) .. max y (y' - dirY)]]
+      | x /= x' && y == y' = [(x'', y) | x'' <- [min x (x' - dirX) .. max x (x' - dirX)]]
+      | x /= x' && y /= y' = [(x'', y'') | (x'', y'') <- zip [x, x+dirX .. x'-dirX] [y, y+dirY .. y'-dirY]]
+      | otherwise = []
+      where dirX = signum (x' - x)
+            dirY = signum (y' - y)
+
 compareColorPlayer :: V.Color -> Player -> Bool
 compareColorPlayer c p
   | c == V.black && p == Black = True

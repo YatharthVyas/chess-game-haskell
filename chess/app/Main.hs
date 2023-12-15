@@ -11,7 +11,7 @@ import Client (connectToServer)
 import qualified Data.ByteString.Char8 as C
 import Control.Concurrent (forkIO)
 import ValidateMove (parseMove, fileToIndex, rankToIndex)
-import Piece (isLegalMove, getPieceAt, canMove, pathClear, getBoardPieceColor, isKingCheck, compareColorPlayer)
+import Piece (isLegalMove, getPieceAt, canMove, pathClear, getBoardPieceColor, isKingCheck, compareColorPlayer, getLineOfAttack)
 import TestData
 import Data.Char (isDigit, isUpper)
 {-# LANGUAGE OverloadedStrings #-}
@@ -156,13 +156,56 @@ appEvent (VtyEvent e) = do
                           put gs { errorMsg = "Invalid Move! Will result in Check" }
                         else do
                           let isBool = isKingCheck (board newGameState) (currentPlayer gs)
-                          -- Send data to the other player. It doesnt matter if we access connection of gs or newGameState since they are the same
-                          liftIO $ sendAll (connection gs) (C.pack moveInput)
-                          put newGameState { isCheck = isBool }
+                          if isBool then do
+                            let ischeckmatebol = isCheckMate (board newGameState) (currentPlayer gs)
+                            if ischeckmatebol then do
+                              liftIO $ sendAll (connection gs) (C.pack moveInput)
+                              put newGameState { errorMsg = "Checkmate!" }
+                            else do
+                              liftIO $ sendAll (connection gs) (C.pack moveInput)
+                              put newGameState { isCheck = isBool }
+                          else do
+                            -- Send data to the other player. It doesnt matter if we access connection of gs or newGameState since they are the same
+                            liftIO $ sendAll (connection gs) (C.pack moveInput)
+                            put newGameState { isCheck = isBool }
 
                       return ()
           _ -> return ()
 appEvent _ = return ()
+
+-- look if it checkmate
+isCheckMate :: Board -> Player -> Bool
+isCheckMate board player =
+  -- traverse the board and find the king of the opponent player
+  let opponent = if player == White then Black else White
+      kingPos = [(rank, file) | rank <- [0..7], file <- [0..7], case getPieceAt board (rank, file) of
+                                                                  Just pc -> case pc ^. pieceType of
+                                                                                King -> compareColorPlayer (pc ^. pieceColor) opponent
+                                                                                _ -> False
+                                                                  _ -> False]
+      result = head kingPos
+      pieces = [(rank, file) | rank <- [0..7], file <- [0..7], case getPieceAt board (rank, file) of
+                                                                  Just pc -> compareColorPlayer (pc ^. pieceColor) player
+                                                                  _ -> False]
+      possibleMoves = [(True, start, result) | start <- pieces, isLegalMove board start result]
+
+      output = case length possibleMoves of
+            0 -> False
+            _ -> let (_, start, _) = head possibleMoves
+                     lineOfAttack = getLineOfAttack start result
+                     opponentPieces = [(rank, file) | rank <- [0..7], file <- [0..7], case getPieceAt board (rank, file) of
+                                                                                 Just pc -> compareColorPlayer (pc ^. pieceColor) opponent
+                                                                                 _ -> False]
+                     -- check if any of the opponent pieces can defend the king and then run executeMove on that move fillowed by isCheck to ensure the block doesnt create a check
+                     isCheckMate = [(start, defendPos) | start <- opponentPieces, defendPos <- lineOfAttack, isLegalMove board start defendPos]
+                     move_error = [False | (initialPos, endPos) <- isCheckMate, (if isKingCheck (makeMove board initialPos endPos) player then False else True)]
+                      
+                     -- check if king can move to a safe position
+                     kingPossibleMoves = [(result, (endRank, endFile)) | endRank <- [0..7], endFile <- [0..7], isLegalMove board result (endRank, endFile)]
+                     kingmove_error = [False | (initialPos, endPos) <- kingPossibleMoves, (if isKingCheck (makeMove board initialPos endPos) player then False else True)]
+
+                  in if length move_error > 0 then False else if length kingmove_error > 0 then False else True
+  in output
 
 initialBoard2 :: Board
 initialBoard2 = [generateRow 0 [Just whiteRook, Just whiteKnight, Just whiteBishop, Just whiteQueen, Just whiteKing, Just whiteBishop, Just whiteKnight, Just whiteRook],
