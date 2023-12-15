@@ -80,9 +80,9 @@ initialBoard = [generateRow 0 [Just whiteRook, Just whiteKnight, Just whiteBisho
 --                 ]
 
 checkBoard :: Board
-checkBoard = [generateRow 0 [Just whiteRook, Just whiteKnight, Just whiteBishop, Just whiteQueen, Just whiteKing, Just whiteBishop, Just whiteKnight, Just whiteRook],
+checkBoard = [generateRow 0 [Just whiteRook, Just whiteKnight, Just whiteBishop, Just whiteQueen, Just whiteKing, Nothing, Nothing, Just whiteRook],
                 generateRow 1 [Just whitePawn, Just whitePawn, Just whitePawn, Nothing, Just whitePawn, Just whitePawn, Just whitePawn, Just whitePawn],
-                generateRow 2 [Just blackBishop, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing],
+                generateRow 2 [Just blackQueen, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing],
                 generateRow 3 [Nothing, Nothing, Nothing, Just whitePawn, Nothing, Nothing, Nothing, Nothing], 
                 generateRow 4 [Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing], 
                 generateRow 5 (replicate 8 Nothing),

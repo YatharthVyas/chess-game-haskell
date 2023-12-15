@@ -42,7 +42,7 @@ import UI
 -}
 
 initialGameState :: GameState
-initialGameState = GameState initialBoard White White "" "" "" undefined False
+initialGameState = GameState checkBoard White Black "" "" "" undefined False
 
 safeBack :: [a] -> [a]
 safeBack [] = []
