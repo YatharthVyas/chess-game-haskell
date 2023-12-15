@@ -1,14 +1,22 @@
-# Chess Game
-
 ### Team Members
 
-- Mohammad Anas: A59020296
-- Nimit Vasavat: A59017505
-- Yatharth Vyas: A59018062
+-   Mohammad Anas: A59020296
+-   Nimit Vasavat: A59017505
+-   Yatharth Vyas: A59018062
+
+### Installation Instructions:
+
+1. Install Haskell and Cabal
+2. `cd chess`
+3. `cabal run`
+
+This project is most compatible with cabal v3.10.2.0 and GHC v9.4.7 however it should work with any recent version of cabal and GHC.
 
 ### Description
 
 Our CSE 230 project centers around developing a command-line terminal user interface (TUI) for an interactive two-player chess game. The key elements of this game encompass:
+
+![Chess Board](./screenshot.png)
 
 Chess board
 Game pieces (both hollow and solid)
