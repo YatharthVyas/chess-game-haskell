@@ -79,7 +79,7 @@ appEvent (VtyEvent e) = do
           V.EvKey V.KEsc [] -> halt
           V.EvKey (V.KChar c) [] -> do
               let newInput = userInput gs ++ [c]
-              let parsedInput = if length newInput > 1 && isDigit (newInput !! 1) &&
+              let parsedInput = if length newInput > 1 && isDigit (newInput !! 1) && (newInput !! 1) < '9' && (newInput !! 0) >= 'a' && (newInput !! 0) <= 'h' &&
                         compareColorPlayer (getBoardPieceColor (board gs) (rankToIndex $ newInput !! 1, fileToIndex $ newInput !! 0)) (currentPlayer gs)
                     then Just (fileToIndex $ newInput !! 0, rankToIndex $ newInput !! 1)
                     else Nothing
