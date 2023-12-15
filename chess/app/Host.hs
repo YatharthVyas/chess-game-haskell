@@ -1,4 +1,4 @@
-module Server where
+module Host where
 
 import Network.Socket
 import Network.Socket.ByteString (recv, sendAll)
@@ -8,14 +8,12 @@ import System.Environment (getArgs)
 import Control.Exception (try, catch, bracketOnError, finally ) 
 import System.IO.Error ( catchIOError, isAlreadyInUseError )
 
-createServer :: IO Socket
-createServer = withSocketsDo $ do
-    -- args <- getArgs
-    -- let port = head args
+createHost :: IO Socket
+createHost = withSocketsDo $ do
     let port = "8080"
     addr <- resolve port
     sock <- open addr
-    -- return the connection object as this is what the server uses to receive and send data
+    -- return the connection object as this is what the host uses to receive and send data
     (conn, _) <- accept sock
     return conn
 

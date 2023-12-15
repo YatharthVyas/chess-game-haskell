@@ -124,6 +124,27 @@ initialCastlingBoard = [generateRow 0 [Just whiteRook, Just whiteKnight, Just wh
                 generateRow 7 [Just blackRook, Just blackKnight, Just blackBishop, Just blackQueen, Just blackKing, Nothing, Nothing, Just blackRook]
                 ]
 
+initialCheckBoard :: Board
+initialCheckBoard = [generateRow 0 [Just whiteRook, Just whiteKnight, Just whiteBishop, Just whiteQueen, Just whiteKing, Just whiteBishop, Just whiteKnight, Just whiteRook],
+                generateRow 1 [Just whitePawn, Just whitePawn, Just whitePawn, Nothing, Just whitePawn, Just whitePawn, Just whitePawn, Just whitePawn],
+                generateRow 2 [Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing],
+                generateRow 3 [Nothing, Just blackBishop, Nothing, Just whitePawn, Nothing, Nothing, Nothing, Nothing], 
+                generateRow 4 [Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing], 
+                generateRow 5 (replicate 8 Nothing),
+                generateRow 6 [Just blackPawn, Just blackPawn, Just blackPawn, Just blackPawn, Nothing, Just blackPawn, Just blackPawn, Just blackPawn],
+                generateRow 7 [Just blackRook, Just blackKnight, Just blackBishop, Just blackQueen, Just blackKing, Nothing, Just blackKnight, Just blackRook]
+                ]
+
+initialCheckMateBoard :: Board
+initialCheckMateBoard = [generateRow 0 [Just whitePawn, Nothing, Just blackQueen, Nothing, Just whiteKing, Just whiteBishop, Just whiteKnight, Just whiteRook],
+                generateRow 1 [Just whitePawn, Just whitePawn, Just whitePawn, Nothing, Just whitePawn, Just whitePawn, Just whitePawn, Just whitePawn],
+                generateRow 2 [Just blackBishop, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing],
+                generateRow 3 [Nothing, Nothing, Nothing, Just whitePawn, Nothing, Nothing, Nothing, Nothing], 
+                generateRow 4 [Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing], 
+                generateRow 5 (replicate 8 Nothing),
+                generateRow 6 [Just blackPawn, Just blackPawn, Just blackPawn, Just blackPawn, Nothing, Just blackPawn, Just blackPawn, Just blackPawn],
+                generateRow 7 [Just blackRook, Just blackKnight, Just blackBishop, Just blackQueen, Just blackKing, Nothing, Just blackKnight, Just blackRook]
+                ]
 ---------------------------------------------
 ------  Test Data for Piece Movement  -------
 ---------------------------------------------

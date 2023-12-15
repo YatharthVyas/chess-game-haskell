@@ -2,18 +2,18 @@
 
 import Test.Tasty ( defaultMain, testGroup, TestTree )
 import Test.Tasty.HUnit
-import TestData
+import TestData 
 import Lens.Micro
 import Piece
 import Types
 import Graphics.Vty.Attributes
 import Control.Exception (assert)
-
+import Check (isKingCheck, isCheckMate)
 main :: IO ()
 main = defaultMain tests
 
 tests :: TestTree
-tests = testGroup "Tests" [movesTests, boardTests, pieceTests]
+tests = testGroup "Tests" [movesTests, boardTests, pieceTests, checkTest, checkMateTest]
 
 movesTests :: TestTree
 movesTests = testGroup "Piece Moves"
@@ -92,6 +92,23 @@ pieceTests = testGroup "Pieces"
       assertEqual "Board piece colors - last row" (map (\a -> getPieceColor' (a ^. cellPiece)) (initialBoard !! 7)) (replicate 8 $ Just black)
   ]
 
+checkTest :: TestTree
+checkTest = testGroup "Check"
+  [
+    testCase "Is Check" $
+      assertEqual "Is Check" (isKingCheck initialBoard White) False,
+    testCase "Is Check" $
+      assertEqual "Is Check" (isKingCheck initialCheckBoard Black) True
+  ]
+
+checkMateTest :: TestTree
+checkMateTest = testGroup "CheckMate"
+  [
+    testCase "Is CheckMate" $
+      assertEqual "Is CheckMate" (isCheckMate initialBoard White) False,
+    testCase "Is CheckMate" $
+      assertEqual "Is CheckMate" (isCheckMate initialCheckMateBoard Black) True
+  ]
 
 getPieceType :: Maybe Piece -> Maybe PieceType
 getPieceType Nothing = Nothing
@@ -100,6 +117,7 @@ getPieceType (Just p) = Just (p ^. pieceType)
 getPieceColor' :: Maybe Piece -> Maybe Color
 getPieceColor' Nothing = Nothing
 getPieceColor' (Just p) = Just (p ^. pieceColor)
+
 
 -- genRandomNonCornerCell :: Gen (Int, Int)
 -- genRandomNonCornerCell = do

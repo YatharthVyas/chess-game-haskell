@@ -6,12 +6,13 @@
 module Main where
 import Lens.Micro ((^.))
 import Types
-import Server (createServer, isPortAvailable)
-import Client (connectToServer)
+import Host (createHost, isPortAvailable)
+import Client (connectToHost)
 import qualified Data.ByteString.Char8 as C
 import Control.Concurrent (forkIO)
-import ValidateMove (parseMove, fileToIndex, rankToIndex)
-import Piece (isLegalMove, getPieceAt, canMove, pathClear, getBoardPieceColor, isKingCheck, compareColorPlayer, getLineOfAttack)
+import ValidateMove (parseMove, fileToIndex, rankToIndex, makeMove)
+import Piece (isLegalMove, getPieceAt, canMove, pathClear, getBoardPieceColor, compareColorPlayer)
+import Check (isKingCheck, isCheckMate)
 import TestData
 import Data.Char (isDigit, isUpper)
 {-# LANGUAGE OverloadedStrings #-}
@@ -30,6 +31,7 @@ import Data.List.Split
 import Control.Monad.IO.Class (liftIO)
 import UI
 
+
 {-
 1. We  probably run it such that it checks if the socket 8080 is being used or not, if it isnt then the terminal which checked it becomes the host and will be white. It will create a socket which will accept connections at port 8080
 
@@ -45,28 +47,6 @@ initialGameState = GameState initialBoard White White "" "" "" undefined False
 safeBack :: [a] -> [a]
 safeBack [] = []
 safeBack xs = init xs
-
-
-makeMove :: Board -> (Int, Int) -> (Int, Int) -> Board
-makeMove board (startRank, startFile) (endRank, endFile) =
-  -- Write the code such that we extract the color of the cell of the end position and ensure that it doesnt change when we copy over the start cell
-  -- This will ensure that the color of the cell is not changed when we move a piece
-    let startCell = (board !! startRank) !! startFile
-        endCell = (board !! endRank) !! endFile
-        startCellColor = _cellColor startCell
-        endCellColor = _cellColor endCell
-        startPieceColor = case _cellPiece startCell of
-            Just (Piece c _) -> c
-            Nothing -> V.blue
-        newStartCellPiece = if getPieceAt board (endRank, endFile) == Just (Piece startPieceColor King) then Just (Piece startCellColor King) else Nothing
-        -- We want the updated position to have the piece from the start position and the color from the end position
-        newStartCell = Cell endCellColor (_cellPiece startCell) endCellColor
-        emptyCell = Cell startCellColor newStartCellPiece startCellColor   -- Create an empty cell with the same color
-        updatedRowStart = take startFile (board !! startRank) ++ [emptyCell] ++ drop (startFile + 1) (board !! startRank)
-        updatedBoardStart = take startRank board ++ [updatedRowStart] ++ drop (startRank + 1) board
-        updatedRowEnd = take endFile (updatedBoardStart !! endRank) ++ [newStartCell] ++ drop (endFile + 1) (updatedBoardStart !! endRank)
-        updatedBoardEnd = take endRank updatedBoardStart ++ [updatedRowEnd] ++ drop (endRank + 1) updatedBoardStart
-    in resetHighlightedBoard updatedBoardEnd
 
 executeMove :: GameState -> String -> IO GameState
 executeMove gs moveInput =
@@ -175,40 +155,6 @@ appEvent (VtyEvent e) = do
           _ -> return ()
 appEvent _ = return ()
 
--- look if it checkmate
-isCheckMate :: Board -> Player -> Bool
-isCheckMate board player =
-  -- traverse the board and find the king of the opponent player
-  let opponent = if player == White then Black else White
-      kingPos = [(rank, file) | rank <- [0..7], file <- [0..7], case getPieceAt board (rank, file) of
-                                                                  Just pc -> case pc ^. pieceType of
-                                                                                King -> compareColorPlayer (pc ^. pieceColor) opponent
-                                                                                _ -> False
-                                                                  _ -> False]
-      result = head kingPos
-      pieces = [(rank, file) | rank <- [0..7], file <- [0..7], case getPieceAt board (rank, file) of
-                                                                  Just pc -> compareColorPlayer (pc ^. pieceColor) player
-                                                                  _ -> False]
-      possibleMoves = [(True, start, result) | start <- pieces, isLegalMove board start result]
-
-      output = case length possibleMoves of
-            0 -> False
-            _ -> let (_, start, _) = head possibleMoves
-                     lineOfAttack = getLineOfAttack start result
-                     opponentPieces = [(rank, file) | rank <- [0..7], file <- [0..7], case getPieceAt board (rank, file) of
-                                                                                 Just pc -> compareColorPlayer (pc ^. pieceColor) opponent
-                                                                                 _ -> False]
-                     -- check if any of the opponent pieces can defend the king and then run executeMove on that move fillowed by isCheck to ensure the block doesnt create a check
-                     isCheckMate = [(start, defendPos) | start <- opponentPieces, defendPos <- lineOfAttack, isLegalMove board start defendPos]
-                     move_error = [False | (initialPos, endPos) <- isCheckMate, (if isKingCheck (makeMove board initialPos endPos) player then False else True)]
-                      
-                     -- check if king can move to a safe position
-                     kingPossibleMoves = [(result, (endRank, endFile)) | endRank <- [0..7], endFile <- [0..7], isLegalMove board result (endRank, endFile)]
-                     kingmove_error = [False | (initialPos, endPos) <- kingPossibleMoves, (if isKingCheck (makeMove board initialPos endPos) player then False else True)]
-
-                  in if length move_error > 0 then False else if length kingmove_error > 0 then False else True
-  in output
-
 initialBoard2 :: Board
 initialBoard2 = [generateRow 0 [Just whiteRook, Just whiteKnight, Just whiteBishop, Just whiteQueen, Just whiteKing, Just whiteBishop, Just whiteKnight, Just whiteRook],
                 generateRow 1 [Just whitePawn, Just whitePawn, Just whitePawn, Nothing, Just whitePawn, Just whitePawn, Just whitePawn, Just whitePawn],
@@ -232,19 +178,19 @@ app =
 
 main :: IO ()
 main = do
-  -- Check if the port 8080 is already bound or not. If not then call the createServer which will make the current terminal the host
-  -- If the port is already bound, then call the connectToServer which will make the current terminal the client
+  -- Check if the port 8080 is already bound or not. If not then call the createHost which will make the current terminal the host
+  -- If the port is already bound, then call the connectToHost which will make the current terminal the client
   isAvailable <- isPortAvailable "8080"
   if isAvailable then do
-    putStrLn "Starting server..."
-    -- Store the socket obtained from createServer in the first value of the connection tuple
-    connection_object <- createServer
+    putStrLn "No game found at port 8080. Starting as host..."
+    -- Store the socket obtained from createHost in the first value of the connection tuple
+    connection_object <- createHost
     let initGameState = initialGameState{connection = connection_object}
     _ <- defaultMain app initGameState
     return ()
   else do
-    putStrLn "Connecting to server..."
-    connection_object <- connectToServer
+    putStrLn "Connecting to host..."
+    connection_object <- connectToHost
     let initGameState = initialGameState{myPlayer = Black, connection = connection_object}
     _ <- defaultMain app initGameState
     return ()

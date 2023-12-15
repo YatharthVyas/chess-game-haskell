@@ -2,6 +2,9 @@ module ValidateMove where
 
 import Data.Char (isDigit, isUpper)
 import Types
+import qualified Graphics.Vty as V
+import Piece
+import UI (resetHighlightedBoard)
 
 fileToIndex :: Char -> Int
 fileToIndex file = if file >= 'a' && file <= 'h' then fromEnum file - fromEnum 'a' else -1 -- @TODO: Handle this error
@@ -25,6 +28,27 @@ parseMove player move
             else Nothing
 
   | otherwise = Nothing
+
+makeMove :: Board -> (Int, Int) -> (Int, Int) -> Board
+makeMove board (startRank, startFile) (endRank, endFile) =
+  -- Write the code such that we extract the color of the cell of the end position and ensure that it doesnt change when we copy over the start cell
+  -- This will ensure that the color of the cell is not changed when we move a piece
+    let startCell = (board !! startRank) !! startFile
+        endCell = (board !! endRank) !! endFile
+        startCellColor = _cellColor startCell
+        endCellColor = _cellColor endCell
+        startPieceColor = case _cellPiece startCell of
+            Just (Piece c _) -> c
+            Nothing -> V.blue
+        newStartCellPiece = if getPieceAt board (endRank, endFile) == Just (Piece startPieceColor King) then Just (Piece startCellColor King) else Nothing
+        -- We want the updated position to have the piece from the start position and the color from the end position
+        newStartCell = Cell endCellColor (_cellPiece startCell) endCellColor
+        emptyCell = Cell startCellColor newStartCellPiece startCellColor   -- Create an empty cell with the same color
+        updatedRowStart = take startFile (board !! startRank) ++ [emptyCell] ++ drop (startFile + 1) (board !! startRank)
+        updatedBoardStart = take startRank board ++ [updatedRowStart] ++ drop (startRank + 1) board
+        updatedRowEnd = take endFile (updatedBoardStart !! endRank) ++ [newStartCell] ++ drop (endFile + 1) (updatedBoardStart !! endRank)
+        updatedBoardEnd = take endRank updatedBoardStart ++ [updatedRowEnd] ++ drop (endRank + 1) updatedBoardStart
+    in resetHighlightedBoard updatedBoardEnd
 
 -- Check if the move is a valid pawn move (e.g., "e4")
 isPawnMove :: String -> Bool

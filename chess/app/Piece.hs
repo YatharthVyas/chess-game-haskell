@@ -93,31 +93,6 @@ getBoardPieceColor :: Board -> (Int, Int) -> Color
 getBoardPieceColor b (x,y) = getPieceColor $ fromMaybe (Piece blue Pawn) (getPieceAt b (x,y))
 
 
-isKingCheck :: Board -> Player -> Bool
-isKingCheck board player =
-  -- traverse the board and find the king of the opponent player
-  let opponent = if player == White then Black else White
-      kingPos = [(rank, file) | rank <- [0..7], file <- [0..7], case getPieceAt board (rank, file) of
-                                                                  Just pc -> case pc ^. pieceType of
-                                                                                King -> compareColorPlayer (pc ^. pieceColor) opponent
-                                                                                _ -> False
-                                                                  _ -> False]
-      result = head kingPos
-      pieces = [(rank, file) | rank <- [0..7], file <- [0..7], case getPieceAt board (rank, file) of
-                                                                  Just pc -> compareColorPlayer (pc ^. pieceColor) player
-                                                                  _ -> False]
-      possibleMoves = [True | start <- pieces, isLegalMove board start result]
-  in if length possibleMoves > 0 then True else False
-
--- Attacker, Victim
-getLineOfAttack :: (Int, Int) -> (Int, Int) -> [(Int, Int)]
-getLineOfAttack (x,y) (x', y')
-      | x == x' && y /= y' = [(x, y'') | y'' <- [min y (y' - dirY) .. max y (y' - dirY)]]
-      | x /= x' && y == y' = [(x'', y) | x'' <- [min x (x' - dirX) .. max x (x' - dirX)]]
-      | x /= x' && y /= y' = [(x'', y'') | (x'', y'') <- zip [x, x+dirX .. x'-dirX] [y, y+dirY .. y'-dirY]]
-      | otherwise = []
-      where dirX = signum (x' - x)
-            dirY = signum (y' - y)
 
 compareColorPlayer :: V.Color -> Player -> Bool
 compareColorPlayer c p
