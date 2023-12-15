@@ -25,6 +25,7 @@ import Control.Monad.State
 import Data.Monoid ((<>))
 import qualified Graphics.Vty as V
 import Network.Socket.ByteString (recv, sendAll)
+import Data.List.Split
  -- Import liftIO
 import Control.Monad.IO.Class (liftIO)
 import UI
@@ -89,8 +90,9 @@ appEvent (VtyEvent e) = do
     if myPlayer gs /= currentPlayer gs then do
         -- Access the connection object from the connection tuple and receive the data. We know that the data will be a valid move
         msg <- liftIO $ recv (connection gs) 1024
-        newGameState <- liftIO $ executeMove gs (C.unpack msg)
-        put newGameState
+        let [moveInput, lastm, errormsg, ischeck] = splitOn "," (C.unpack msg)
+        newGameState <- liftIO $ executeMove gs moveInput
+        put newGameState { lastMove = lastm, errorMsg = errormsg, isCheck = if ischeck == "True" then True else False}
         return ()
     else do
       case e of
@@ -143,7 +145,7 @@ appEvent (VtyEvent e) = do
                             put gs { errorMsg = "In Check State!" }
                           else do
                             -- Send data to the other player
-                            liftIO $ sendAll (connection gs) (C.pack moveInput)
+                            liftIO $ sendAll (connection gs) (C.pack (moveInput ++ "," ++ lastMove newGameState ++ "," ++ errorMsg newGameState ++ "," ++ "False"))
                             put newGameState { isCheck = False }
 
                       -- if king not in check, look if the move puts the opponent king in check
@@ -159,14 +161,14 @@ appEvent (VtyEvent e) = do
                           if isBool then do
                             let ischeckmatebol = isCheckMate (board newGameState) (currentPlayer gs)
                             if ischeckmatebol then do
-                              liftIO $ sendAll (connection gs) (C.pack moveInput)
+                              liftIO $ sendAll (connection gs) (C.pack (moveInput ++ "," ++ lastMove newGameState ++ "," ++ "Checkmate!" ++ "," ++ if isCheck gs then "True" else "False"))
                               put newGameState { errorMsg = "Checkmate!" }
                             else do
-                              liftIO $ sendAll (connection gs) (C.pack moveInput)
+                              liftIO $ sendAll (connection gs) (C.pack (moveInput ++ "," ++ lastMove newGameState ++ "," ++ errorMsg newGameState ++ "," ++ if isBool then "True" else "False"))
                               put newGameState { isCheck = isBool }
                           else do
                             -- Send data to the other player. It doesnt matter if we access connection of gs or newGameState since they are the same
-                            liftIO $ sendAll (connection gs) (C.pack moveInput)
+                            liftIO $ sendAll (connection gs) (C.pack (moveInput ++ "," ++ lastMove newGameState ++ "," ++ errorMsg newGameState ++ "," ++ if isBool then "True" else "False"))
                             put newGameState { isCheck = isBool }
 
                       return ()
