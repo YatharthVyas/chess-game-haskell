@@ -41,6 +41,7 @@ To achieve this, we will utilize the brick library to construct a text-based gri
 -   For borders in UI: https://github.com/jtdaugherty/brick/blob/master/programs/BorderDemo.hs
 -   Tasty documentation (for tests): https://hackage.haskell.org/package/tasty
 -   Brick documentation (for UI): https://hackage.haskell.org/package/brick
+-   Host and Client implementation documentation (for Networked Chess): https://hackage.haskell.org/package/network-3.1.4.0/docs/Network-Socket.html
 -   Github Copilot was used to auto-complete some of the code for the project: https://copilot.github.com/
 -   ChatGPT was used in error debugging and some code completion: https://chat.openai.com/
 -   We took some help from TA George for implementing the GameState as a global variable (using lenses)
