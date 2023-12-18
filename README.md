@@ -32,6 +32,7 @@ To achieve this, we will utilize the brick library to construct a text-based gri
 
 ### Sources:
 
+-   The feature to highlight possible moves and takedowns was inspired by: https://lichess.org/practice/checkmates/piece-checkmates-i/BJy6fEDf/dW7KIuoY
 -   Special Moves: https://www.chess.com/terms/special-chess-moves
 -   Color Scheme for Chess board: https://omgchess.blogspot.com/2015/09/chess-board-color-schemes.html
 -   Chess ASCII Symbols: https://en.wikipedia.org/wiki/Chess_symbols_in_Unicode
