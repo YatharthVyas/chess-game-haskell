@@ -30,6 +30,17 @@ This game operates on a turn-based system where each player takes turns inputtin
 
 To achieve this, we will utilize the brick library to construct a text-based grid representing the chessboard. We will define a Cell type for each square, which can either be empty or contain a piece. A function will be employed to display these cells, and another function will arrange them into a complete board. The application will set up visual attributes and manage events, ultimately displaying the initial state of the chessboard.
 
+### Sources:
+
+-   Special Moves: https://www.chess.com/terms/special-chess-moves
+-   Color Scheme for Chess board: https://omgchess.blogspot.com/2015/09/chess-board-color-schemes.html
+-   Chess ASCII Symbols: https://en.wikipedia.org/wiki/Chess_symbols_in_Unicode
+-   Chess Game Title ASCII Art: https://patorjk.com/software/taag/#p=display&f=Graffiti&t=Chess
+-   Lenses in Haskell: https://www.fpcomplete.com/haskell/tutorial/lens/
+-   For borders in UI: https://github.com/jtdaugherty/brick/blob/master/programs/BorderDemo.hs
+-   Tasty documentation (for tests): https://hackage.haskell.org/package/tasty
+-   Brick documentation (for UI): https://hackage.haskell.org/package/brick
+
 ## Milestones
 
 ### Architecture
