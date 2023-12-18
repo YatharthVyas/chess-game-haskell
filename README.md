@@ -43,6 +43,7 @@ To achieve this, we will utilize the brick library to construct a text-based gri
 -   Brick documentation (for UI): https://hackage.haskell.org/package/brick
 -   Github Copilot was used to auto-complete some of the code for the project: https://copilot.github.com/
 -   ChatGPT was used in error debugging and some code completion: https://chat.openai.com/
+-   We took some help from TA George for implementing the GameState as a global variable (using lenses)
 
 ## Milestones
 
